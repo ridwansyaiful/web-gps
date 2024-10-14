@@ -3,17 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Website Sederhana</title>
+    <title>Halaman GPS</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+        }
+        .text {
+            flex: 1;
+            font-size: 24px;
+            text-align: left;
+        }
+        .image {
+            flex: 1;
+            text-align: right;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+        }
+    </style>
 </head>
 <body>
-    <h1>Selamat Datang di Website Sederhana</h1>
-    <p id="pesan">Klik tombol di bawah ini untuk melihat pesan!</p>
-    <button id="tombol">Tampilkan Pesan</button>
-
-    <script>
-        document.getElementById('tombol').onclick = function() {
-            document.getElementById('pesan').innerText = 'Halo! Ini adalah pesan dari JavaScript!';
-        };
-    </script>
+    <div class="text">
+        Selamat GPS Anda Terdaftar
+    </div>
+    <div class="image">
+        <img src="https://via.placeholder.com/150" alt="GPS Location">
+    </div>
 </body>
 </html>
