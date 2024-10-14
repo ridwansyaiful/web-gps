@@ -39,6 +39,7 @@
 
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
+        // Fungsi untuk memperbarui waktu dan tanggal
         function updateDateTime() {
             const now = new Date();
             const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
@@ -50,20 +51,24 @@
         setInterval(updateDateTime, 1000);
         updateDateTime();
 
+        // Fungsi untuk inisialisasi peta
         function initMap(latitude, longitude) {
             const map = L.map('map').setView([latitude, longitude], 12);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 maxZoom: 19,
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             }).addTo(map);
             L.marker([latitude, longitude]).addTo(map).bindPopup('Lokasi Anda').openPopup();
         }
 
+        // Fungsi untuk menangani kesalahan lokasi
         function handleLocationError() {
             const defaultLocation = [-7.7956, 110.3695]; // Yogyakarta
             initMap(defaultLocation[0], defaultLocation[1]);
             document.getElementById('retry').style.display = 'block'; // Tampilkan tombol retry
         }
 
+        // Fungsi untuk meminta lokasi
         function requestLocation() {
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(position => {
