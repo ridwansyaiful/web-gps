@@ -15,7 +15,11 @@
         .text {
             font-size: 24px;
             text-align: center; /* Menyelaraskan teks di tengah */
-            margin-bottom: 20px; /* Memberi jarak antara teks dan peta */
+            margin-bottom: 10px; /* Memberi jarak antara teks dan waktu */
+        }
+        .datetime {
+            font-size: 18px;
+            margin-bottom: 20px; /* Memberi jarak antara waktu dan peta */
         }
         #map {
             width: 100%; /* Membuat peta mengambil lebar penuh */
@@ -27,10 +31,26 @@
     <div class="text">
         Selamat GPS Anda Terdaftar
     </div>
+    <div class="datetime" id="datetime"></div>
     <div id="map"></div>
 
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
+        // Menampilkan waktu, tanggal, dan jam
+        function updateDateTime() {
+            const now = new Date();
+            const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
+            const dateString = now.toLocaleDateString('id-ID', options);
+            const timeString = now.toLocaleTimeString('id-ID');
+
+            document.getElementById('datetime').innerHTML = `${dateString}, ${timeString}`;
+        }
+
+        // Update waktu setiap detik
+        setInterval(updateDateTime, 1000);
+        updateDateTime(); // Memanggil fungsi untuk pertama kali
+
+        // Inisialisasi peta
         const map = L.map('map').setView([-7.7956, 110.3695], 12); // Yogyakarta
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -38,7 +58,7 @@
         }).addTo(map);
 
         L.marker([-7.7956, 110.3695]).addTo(map)
-            .bindPopup('Lokasi Anda')
+            .bindPopup('Yogyakarta')
             .openPopup();
     </script>
 </body>
