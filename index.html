@@ -96,12 +96,19 @@
                 .addTo(map)
                 .bindPopup('Lokasi Anda (biru)').openPopup();
 
-            // Lokasi tetap yang diinginkan (misalnya Yogyakarta)
-            const fixedLocation = [-7.7956, 110.3695];
-            // Tambahkan marker untuk lokasi tetap dengan ikon merah
-            const fixedLocationMarker = L.marker(fixedLocation, { icon: redIcon })
+            // Lokasi tetap pertama yang diinginkan (misalnya Yogyakarta)
+            const fixedLocation1 = [-7.7956, 110.3695]; // Koordinat pertama
+            // Tambahkan marker untuk lokasi tetap pertama dengan ikon merah
+            const fixedLocationMarker1 = L.marker(fixedLocation1, { icon: redIcon })
                 .addTo(map)
-                .bindPopup('Lokasi Tetap (merah)').openPopup();
+                .bindPopup('Lokasi Tetap 1 (merah)').openPopup();
+
+            // Lokasi tetap kedua yang diinginkan (misalnya Surabaya)
+            const fixedLocation2 = [-7.2504, 112.7688]; // Koordinat kedua
+            // Tambahkan marker untuk lokasi tetap kedua dengan ikon biru
+            const fixedLocationMarker2 = L.marker(fixedLocation2, { icon: blueIcon })
+                .addTo(map)
+                .bindPopup('Lokasi Tetap 2 (biru)').openPopup();
 
             // Pastikan peta dirender ulang setelah elemen terlihat
             setTimeout(() => {
@@ -114,6 +121,9 @@
             document.getElementById('status-text').innerText = 'Lokasi tidak tersedia';
             document.getElementById('no-location').style.display = 'block'; // Tampilkan pesan tidak ada lokasi
             document.getElementById('reload-instructions').style.display = 'block'; // Tampilkan instruksi reload
+
+            // Tetap tampilkan lokasi default meskipun ada error
+            initMap(-7.7956, 110.3695); // Lokasi default Yogyakarta
         }
 
         // Fungsi untuk meminta lokasi
