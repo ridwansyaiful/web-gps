@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Halaman GPS</title>
+    <title>Peta Yogyakarta</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <style>
         body {
             display: flex;
@@ -16,22 +17,29 @@
             font-size: 24px;
             text-align: left;
         }
-        .image {
+        #map {
             flex: 1;
-            text-align: right;
-        }
-        img {
-            max-width: 100%;
-            height: auto;
+            height: 400px; /* Tinggi peta */
         }
     </style>
 </head>
 <body>
     <div class="text">
-        Selamat Lokasi GPS Anda Terdaftar Selama Waktu Tamu Tidak Wajib Berkunjung (pukul 21.00 WIB - 04.00 WIB)
+        Selamat GPS Anda Terdaftar
     </div>
-    <div class="image">
-        <img src="https://via.placeholder.com/150" alt="GPS Location">
-    </div>
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        const map = L.map('map').setView([-7.7956, 110.3695], 12); // Yogyakarta
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+        }).addTo(map);
+
+        L.marker([-7.7956, 110.3695]).addTo(map)
+            .bindPopup('Yogyakarta')
+            .openPopup();
+    </script>
 </body>
 </html>
