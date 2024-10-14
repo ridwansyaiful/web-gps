@@ -8,17 +8,17 @@
     <style>
         body {
             display: flex;
-            justify-content: space-between;
+            flex-direction: column; /* Mengubah arah flex menjadi kolom */
             align-items: center;
             padding: 20px;
         }
         .text {
-            flex: 1;
             font-size: 24px;
-            text-align: left;
+            text-align: center; /* Menyelaraskan teks di tengah */
+            margin-bottom: 20px; /* Memberi jarak antara teks dan peta */
         }
         #map {
-            flex: 1;
+            width: 100%; /* Membuat peta mengambil lebar penuh */
             height: 400px; /* Tinggi peta */
         }
     </style>
