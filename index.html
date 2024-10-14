@@ -27,6 +27,7 @@
         }
         #retry {
             margin-top: 20px;
+            display: none; /* Sembunyikan tombol awalnya */
         }
     </style>
 </head>
@@ -34,7 +35,7 @@
     <div class="text">Selamat GPS Anda Terdaftar</div>
     <div class="datetime" id="datetime"></div>
     <div id="map"></div>
-    <button id="retry" style="display: none;">Coba Lagi untuk Mengakses Lokasi</button>
+    <button id="retry">Coba Lagi untuk Mengakses Lokasi</button>
 
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
@@ -63,24 +64,24 @@
             document.getElementById('retry').style.display = 'block'; // Tampilkan tombol retry
         }
 
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(position => {
-                const { latitude, longitude } = position.coords;
-                initMap(latitude, longitude);
-            }, handleLocationError);
-        } else {
-            alert('Geolocation tidak didukung oleh browser ini.');
-        }
-
-        document.getElementById('retry').addEventListener('click', function() {
-            // Coba lagi mendapatkan lokasi
+        function requestLocation() {
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(position => {
                     const { latitude, longitude } = position.coords;
                     initMap(latitude, longitude);
-                    this.style.display = 'none'; // Sembunyikan tombol setelah berhasil
+                    document.getElementById('retry').style.display = 'none'; // Sembunyikan tombol setelah berhasil
                 }, handleLocationError);
+            } else {
+                alert('Geolocation tidak didukung oleh browser ini.');
             }
+        }
+
+        // Minta lokasi saat pertama kali
+        requestLocation();
+
+        // Event listener untuk tombol retry
+        document.getElementById('retry').addEventListener('click', function() {
+            requestLocation(); // Coba lagi mendapatkan lokasi
         });
     </script>
 </body>
