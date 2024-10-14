@@ -92,13 +92,15 @@
             }).addTo(map);
 
             // Tambahkan marker untuk lokasi saat ini dengan ikon biru
-            L.marker([latitude, longitude], { icon: blueIcon }).addTo(map)
+            const currentLocationMarker = L.marker([latitude, longitude], { icon: blueIcon })
+                .addTo(map)
                 .bindPopup('Lokasi Anda (biru)').openPopup();
 
             // Lokasi tetap yang diinginkan (misalnya Yogyakarta)
             const fixedLocation = [-7.7956, 110.3695];
             // Tambahkan marker untuk lokasi tetap dengan ikon merah
-            L.marker(fixedLocation, { icon: redIcon }).addTo(map)
+            const fixedLocationMarker = L.marker(fixedLocation, { icon: redIcon })
+                .addTo(map)
                 .bindPopup('Lokasi Tetap (merah)').openPopup();
 
             // Pastikan peta dirender ulang setelah elemen terlihat
