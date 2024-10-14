@@ -36,6 +36,19 @@
             color: gray;
             text-align: center;
         }
+        footer {
+            margin-top: 20px;
+            font-size: 14px;
+            text-align: center;
+            color: gray;
+        }
+        footer a {
+            color: #007BFF;
+            text-decoration: none;
+        }
+        footer a:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
@@ -48,6 +61,10 @@
     <div id="reload-instructions" style="display:none;">
         <p>Silakan reload halaman ini dan berikan akses lokasi agar peta dapat ditampilkan.</p>
     </div>
+
+    <footer>
+        &copy; 2024 Hak Cipta. Kunjungi kami di <a href="https://instagram.com" target="_blank">Instagram</a>
+    </footer>
 
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
@@ -91,6 +108,11 @@
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             }).addTo(map);
 
+            // Tambahkan marker untuk lokasi saat ini dengan ikon biru
+            const currentLocationMarker = L.marker([latitude, longitude], { icon: blueIcon })
+                .addTo(map)
+                .bindPopup('Lokasi Anda (biru)').openPopup();
+
             // Lokasi tetap pertama yang diinginkan (misalnya Yogyakarta)
             const fixedLocation1 = [-7.7956, 110.3695]; // Koordinat pertama
             // Tambahkan marker untuk lokasi tetap pertama dengan ikon merah
@@ -104,11 +126,6 @@
             const fixedLocationMarker2 = L.marker(fixedLocation2, { icon: blueIcon })
                 .addTo(map)
                 .bindPopup('Lokasi Tetap 2 (biru)').openPopup();
-
-            // Tambahkan marker untuk lokasi saat ini dengan ikon biru
-            const currentLocationMarker = L.marker([latitude, longitude], { icon: blueIcon })
-                .addTo(map)
-                .bindPopup('Lokasi Anda (biru)').openPopup();
 
             // Pastikan peta dirender ulang setelah elemen terlihat
             setTimeout(() => {
