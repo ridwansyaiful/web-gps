@@ -25,52 +25,63 @@
             width: 100%;
             height: 400px;
         }
+        #retry {
+            margin-top: 20px;
+        }
     </style>
 </head>
 <body>
-    <div class="text">
-        Selamat GPS Anda Terdaftar
-    </div>
+    <div class="text">Selamat GPS Anda Terdaftar</div>
     <div class="datetime" id="datetime"></div>
     <div id="map"></div>
+    <button id="retry" style="display: none;">Coba Lagi untuk Mengakses Lokasi</button>
 
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
-        // Menampilkan waktu, tanggal, dan jam
         function updateDateTime() {
             const now = new Date();
             const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
             const dateString = now.toLocaleDateString('id-ID', options);
             const timeString = now.toLocaleTimeString('id-ID');
-
             document.getElementById('datetime').innerHTML = `${dateString}, ${timeString}`;
         }
 
-        // Update waktu setiap detik
         setInterval(updateDateTime, 1000);
-        updateDateTime(); // Memanggil fungsi untuk pertama kali
+        updateDateTime();
 
-        // Mengambil lokasi pengguna
+        function initMap(latitude, longitude) {
+            const map = L.map('map').setView([latitude, longitude], 12);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+            }).addTo(map);
+            L.marker([latitude, longitude]).addTo(map).bindPopup('Lokasi Anda').openPopup();
+        }
+
+        function handleLocationError() {
+            const defaultLocation = [-7.7956, 110.3695]; // Yogyakarta
+            initMap(defaultLocation[0], defaultLocation[1]);
+            document.getElementById('retry').style.display = 'block'; // Tampilkan tombol retry
+        }
+
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(position => {
                 const { latitude, longitude } = position.coords;
-                // Inisialisasi peta dengan lokasi pengguna
-                const map = L.map('map').setView([latitude, longitude], 12);
-                
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    maxZoom: 19,
-                }).addTo(map);
-
-                // Tambahkan marker di lokasi pengguna
-                L.marker([latitude, longitude]).addTo(map)
-                    .bindPopup('Lokasi Anda')
-                    .openPopup();
-            }, () => {
-                alert('Tidak dapat mendapatkan lokasi Anda.');
-            });
+                initMap(latitude, longitude);
+            }, handleLocationError);
         } else {
             alert('Geolocation tidak didukung oleh browser ini.');
         }
+
+        document.getElementById('retry').addEventListener('click', function() {
+            // Coba lagi mendapatkan lokasi
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(position => {
+                    const { latitude, longitude } = position.coords;
+                    initMap(latitude, longitude);
+                    this.style.display = 'none'; // Sembunyikan tombol setelah berhasil
+                }, handleLocationError);
+            }
+        });
     </script>
 </body>
 </html>
