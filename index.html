@@ -63,6 +63,21 @@
         setInterval(updateDateTime, 1000);
         updateDateTime();
 
+        // Fungsi untuk inisialisasi peta dengan Leaflet
+        function initMap(latitude, longitude) {
+            const map = L.map('map').setView([latitude, longitude], 12);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+            L.marker([latitude, longitude]).addTo(map).bindPopup('Lokasi Anda').openPopup();
+
+            // Pastikan peta dirender ulang setelah elemen terlihat
+            setTimeout(() => {
+                map.invalidateSize();
+            }, 100);
+        }
+
         // Fungsi untuk menangani kesalahan lokasi atau jika tidak diizinkan
         function handleLocationError() {
             document.getElementById('status-text').innerText = 'Lokasi tidak tersedia';
@@ -75,14 +90,9 @@
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(position => {
                     const { latitude, longitude } = position.coords;
-                    const map = L.map('map').setView([latitude, longitude], 12);
-                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                        maxZoom: 19,
-                        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                    }).addTo(map);
-                    L.marker([latitude, longitude]).addTo(map).bindPopup('Lokasi Anda').openPopup();
+                    document.getElementById('map').style.display = 'block'; // Pastikan peta terlihat sebelum inisialisasi
+                    initMap(latitude, longitude);
                     document.getElementById('status-text').innerText = 'Selamat GPS Anda Terdaftar';
-                    document.getElementById('map').style.display = 'block'; // Tampilkan peta
                     document.getElementById('no-location').style.display = 'none'; // Sembunyikan pesan tidak ada lokasi
                     document.getElementById('reload-instructions').style.display = 'none'; // Sembunyikan instruksi reload
                 }, handleLocationError);
