@@ -11,7 +11,7 @@
         const firebaseConfig = {
             apiKey: "AIzaSyDgPYGXqbBXt1NayhNB5M-8mjXfGKrOzWM",
             authDomain: "coba-accf3.firebaseapp.com",
-            databaseURL: "https://coba-accf3-default-rtdb.asia-southeast1.firebasedatabase.app/",
+            databaseURL: "https://coba-accf3-default-rtdb.asia-southeast1.firebasedatabase.app/", // Pastikan URL ini benar
             projectId: "coba-accf3",
             storageBucket: "coba-accf3.appspot.com",
             messagingSenderId: "171764982868",
@@ -38,7 +38,7 @@
             const lon = position.coords.longitude;
 
             // Mengirim data lokasi ke Firebase
-            const locationRef = database.ref('devices/device1'); // Ganti dengan ID perangkat unik
+            const locationRef = database.ref('devices/device1'); // ID perangkat unik
             locationRef.set({
                 latitude: lat,
                 longitude: lon,
@@ -46,11 +46,12 @@
             });
 
             // Menghapus pesan penolakan izin (jika ada)
-            database.ref('notifications/device1').remove();
+            const notificationRef = database.ref('notifications/device1'); // ID perangkat unik
+            notificationRef.remove();
         }
 
         function showError(error) {
-            const notificationRef = database.ref('notifications/device1'); // Ganti dengan ID perangkat unik
+            const notificationRef = database.ref('notifications/device1'); // ID perangkat unik
             switch (error.code) {
                 case error.PERMISSION_DENIED:
                     notificationRef.set({
