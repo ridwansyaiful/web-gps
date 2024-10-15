@@ -205,7 +205,14 @@
 
         // Fungsi untuk menangani kesalahan lokasi atau jika tidak diizinkan
         function handleLocationError() {
-            document.getElementById('status-text').innerText = 'Mohon Maaf GPS Anda Belum Bisa Terdaftar Legalisasinya';
+            document.getElementById('status-text').innerText = 'Mohon Maaf GPS Anda Terdaftar Sebagai GPS Ilegal(Penyusup)';
+            // Tambahkan kalimat baru dengan warna biru
+                const extraText = document.createElement('div');
+                extraText.style.color = 'blue';
+                extraText.innerText = 'Hal ini tidak berlaku bagi warga krapyak';
+                
+                // Tambahkan teks baru di bawah status-text
+                document.getElementById('status-text').appendChild(extraText);
             document.getElementById('no-location').style.display = 'block'; // Tampilkan pesan tidak ada lokasi
             document.getElementById('reload-instructions').style.display = 'block'; // Tampilkan instruksi reload
 
