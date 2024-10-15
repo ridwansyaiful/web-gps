@@ -154,6 +154,7 @@
             L.marker([latitude, longitude], { icon: blueIcon }).addTo(map).bindPopup('Lokasi Anda (GPS Legal)').openPopup();
             defaultLocations.forEach(loc => {
                 L.marker(loc, { icon: blueIcon }).addTo(map).bindPopup('Lokasi Default').openPopup();
+            });
 
             setTimeout(() => {
                 map.invalidateSize();
