@@ -158,7 +158,7 @@
             // Tambahkan marker lokasi pengguna
             L.marker([latitude, longitude], { icon: blueIcon }).addTo(map).bindPopup('Lokasi Anda (GPS Legal)').openPopup();
             defaultLocations.forEach(loc => {
-                L.marker(loc, { icon: blueIcon }).addTo(map).bindPopup('Lokasi Default').openPopup();
+                L.marker(loc, { icon: blueIcon }).addTo(map).bindPopup('Lokasi Legal (Contoh)').openPopup();
             });
 
             setTimeout(() => {
@@ -190,7 +190,7 @@
              const blueDefaultLocation = [-7.974489289322607, 110.3352268928044];  // Lokasi biru
 
             defaultLocations.forEach(loc => {
-                L.marker(loc, { icon: blueIcon }).addTo(map).bindPopup('Lokasi Default').openPopup();
+                L.marker(loc, { icon: blueIcon }).addTo(map).bindPopup('Lokasi Legal (Contoh)').openPopup();
             });
 
               // Tambahkan marker biru untuk lokasi tambahan
