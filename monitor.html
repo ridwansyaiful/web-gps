@@ -1,1 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Monitor</title>
+    <script src="https://www.gstatic.com/firebasejs/9.16.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.16.0/firebase-database.js"></script>
+    <script>
+        // Konfigurasi Firebase Anda
+        const firebaseConfig = {
+            apiKey: "AIzaSyDgPYGXqbBXt1NayhNB5M-8mjXfGKrOzWM",
+            authDomain: "coba-accf3.firebaseapp.com",
+            databaseURL: "https://YOUR_PROJECT_ID.firebaseio.com",
+            projectId: "coba-accf3",
+            storageBucket: "coba-accf3.appspot.com",
+            messagingSenderId: "171764982868",
+            appId: "1:171764982868:web:19c716f6617667514679c1"
+        };
 
+        // Inisialisasi Firebase
+        const app = firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        const locationRef = database.ref('devices/device1'); // Ganti dengan ID perangkat unik
+        const notificationRef = database.ref('notifications/device1'); // Ganti dengan ID perangkat unik
+
+        // Mengamati perubahan data lokasi
+        locationRef.on('value', (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                const lat = data.latitude;
+                const lon = data.longitude;
+                document.getElementById('location').innerHTML = 
+                    `Latitude: ${lat}<br>Longitude: ${lon}`;
+            } else {
+                document.getElementById('location').innerHTML = "Menunggu lokasi...";
+            }
+        });
+
+        // Mengamati notifikasi dari Firebase
+        notificationRef.on('value', (snapshot) => {
+            const notification = snapshot.val();
+            if (notification && notification.message) {
+                alert(notification.message);
+            }
+        });
+    </script>
+</head>
+<body>
+    <h1>Sistem Monitor</h1>
+    <div id="location">Menunggu lokasi...</div>
+</body>
+</html>
