@@ -165,9 +165,15 @@
                 [-7.9751992266457785, 110.33376458475364]
             ];
 
+             const blueDefaultLocation = [-7.975933, 110.331807];  // Lokasi biru
+
             defaultLocations.forEach(loc => {
                 L.marker(loc, { icon: redIcon }).addTo(map).bindPopup('Lokasi Default').openPopup();
             });
+
+              // Tambahkan marker biru untuk lokasi tambahan
+            L.marker(blueDefaultLocation, { icon: blueIcon }).addTo(map).bindPopup('Lokasi Default Biru').openPopup();
+
 
             setTimeout(() => {
                 map.invalidateSize();
