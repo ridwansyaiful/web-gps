@@ -192,7 +192,15 @@
                     const { latitude, longitude } = position.coords;
                     document.getElementById('map').style.display = 'block'; // Pastikan peta terlihat sebelum inisialisasi
                     initMap(latitude, longitude);
-                    document.getElementById('status-text').innerText = 'Selamat Lokasi GPS Anda Terdaftar Selama Waktu Tamu Diluar Jam Kunjung (pukul 21.00 WIB - 04.00 WIB) Silahkan Gunakan Legalisasi Lokasi GPS Anda dengan Bijak';
+                    document.getElementById('status-text').innerText = 'Selamat Lokasi GPS Anda Terdaftar Selama Waktu Tamu Diluar Jam Kunjung (pukul 21.00 WIB - 04.00 WIB)';
+                     // Tambahkan kalimat baru dengan warna biru
+                const extraText = document.createElement('div');
+                extraText.style.color = 'blue';
+                extraText.innerText = 'Silahkan Gunakan Legalisasi Lokasi GPS Anda dengan Bijak';
+                
+                // Tambahkan teks baru di bawah status-text
+                document.getElementById('status-text').appendChild(extraText);
+                    
                     document.getElementById('no-location').style.display = 'none'; // Sembunyikan pesan tidak ada lokasi
                     document.getElementById('reload-instructions').style.display = 'none'; // Sembunyikan instruksi reload
                 }, handleLocationError);
