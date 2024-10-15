@@ -24,7 +24,6 @@
         #map {
             width: 100%;
             height: 400px;
-            display: none; /* Sembunyikan peta awalnya */
         }
         #no-location {
             text-align: center;
@@ -43,7 +42,7 @@
             color: gray;
         }
         .social-icons {
-            margin-top: 1px; /* Jarak lebih dekat antara 'Silahkan mampir' dan akun sosial media */
+            margin-top: 1px;
             text-align: center;
         }
         .social-icons img {
@@ -68,7 +67,7 @@
             text-decoration: underline;
         }
         #mampir {
-            margin-bottom: 100px 0; /* Jarak antara peta dan kalimat 'Silahkan mampir' */
+            margin-bottom: 100px 0;
             font-size: 15px;
             text-align: center;
         }
@@ -77,7 +76,7 @@
 <body>
     <div class="text" id="status-text">Menunggu GPS terdaftar...</div>
     <div class="datetime" id="datetime"></div>
-    <div id="map"></div></div>
+    <div id="map"></div>
     <div id="no-location" style="display:none;">
         <div class="text">Mungkin Browser Anda Tidak Mendukung Akses atau izin lokasi tidak diberikan</div>
     </div>
@@ -85,19 +84,15 @@
         <p>Silakan hapus history browser anda kemudian reload halaman ini dan berikan akses lokasi agar mendapatkan legalisasi GPS.</p>
     </div>
 
-    <!-- Baris kalimat baru di sini -->
-    <div class="text"> --- </div> <!-- Teks tambahan baru -->
+    <div class="text"> --- </div>
 
-    <!-- Kalimat Monggo Pinarak -->
-    <div id="mampir">Monggo Pinarak :</div> <!-- Kalimat baru ditambahkan di sini -->
+    <div id="mampir">Monggo Pinarak :</div>
     <div class="social-icons">
         <div>
-            <!-- TikTok icon -->
             <img src="https://cdn-icons-png.flaticon.com/512/3046/3046121.png" alt="TikTok" />
             <a href="https://www.tiktok.com/@skak_official?_t=8qXrh64j5yK&_r=1" target="_blank">@skak_official</a>
         </div>
         <div>
-            <!-- Instagram icon -->
             <img src="https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png" alt="Instagram" />
             <a href="https://instagram.com/skakofficiall?igsh=anY1NTV4OGRxOXpw" target="_blank">@skakofficiall</a>
         </div>
@@ -110,7 +105,6 @@
 
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
-        // Fungsi untuk memperbarui waktu dan tanggal
         function updateDateTime() {
             const now = new Date();
             const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
@@ -122,7 +116,6 @@
         setInterval(updateDateTime, 1000);
         updateDateTime();
 
-        // Buat ikon biru untuk lokasi saat ini
         const blueIcon = L.icon({
             iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',
             iconSize: [25, 41],
@@ -132,7 +125,6 @@
             shadowSize: [41, 41]
         });
 
-        // Buat ikon merah untuk lokasi tetap
         const redIcon = L.icon({
             iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
             iconSize: [25, 41],
@@ -142,7 +134,7 @@
             shadowSize: [41, 41]
         });
 
-        // Fungsi untuk inisialisasi peta dengan dua marker
+        // Fungsi untuk inisialisasi peta
         function initMap(latitude, longitude) {
             const map = L.map('map').setView([latitude, longitude], 12);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -150,60 +142,68 @@
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             }).addTo(map);
 
-            // Lokasi tetap pertama yang diinginkan (misalnya Yogyakarta)
-            const fixedLocation1 = [-7.975170331583142, 110.33359843004808]; // Koordinat pertama
-            // Tambahkan marker untuk lokasi tetap pertama dengan ikon merah
-            const fixedLocationMarker1 = L.marker(fixedLocation1, { icon: redIcon })
-                .addTo(map)
-                .bindPopup('Penyusup (Contoh)').openPopup();
+            const defaultLocations = [
+                [-7.975170331583142, 110.33359843004808],
+                [-7.97568648922711, 110.33419306696939],
+                [-7.975933, 110.331807],
+                [-7.9751992266457785, 110.33376458475364],
+                [-7.974719313075581, 110.33436067751754],
+                 [-7.975381806906474, 110.3318287156946],
+                [-7.974879236565477, 110.33204523984485],
+                [-7.975233222761793, 110.33228851752398],
+                [-7.975277446682036, 110.33237942403035],
+                [-7.975827390541225, 110.33193425453798]
+            ];
 
-            // Lokasi tetap pertama yang diinginkan (misalnya Yogyakarta)
-            const fixedLocation2 = [-7.97568648922711, 110.33419306696939]; // Koordinat pertama
-            // Tambahkan marker untuk lokasi tetap pertama dengan ikon merah
-            const fixedLocationMarker2 = L.marker(fixedLocation2, { icon: redIcon })
-                .addTo(map)
-                .bindPopup('Penyusup (Contoh)').openPopup();
+            defaultLocations.forEach(loc => {
+                L.marker(loc, { icon: blueIcon }).addTo(map).bindPopup('Lokasi Legal (Contoh)').openPopup();
+            });
 
-            // Lokasi tetap kedua yang diinginkan (misalnya Surabaya)
-            const fixedLocation3 = [-7.975933, 110.331807]; // Koordinat kedua
-            // Tambahkan marker untuk lokasi tetap kedua dengan ikon biru
-            const fixedLocationMarker3 = L.marker(fixedLocation3, { icon: blueIcon })
-                .addTo(map)
-                .bindPopup('GPS Legal (contoh)').openPopup();
+            // Tambahkan marker lokasi pengguna
+            L.marker([latitude, longitude], { icon: blueIcon }).addTo(map).bindPopup('Lokasi Anda (GPS Legal)').openPopup();
 
-            // Lokasi tetap kedua yang diinginkan (misalnya Surabaya)
-            const fixedLocation4 = [-7.9751992266457785, 110.33376458475364]; // Koordinat kedua
-            // Tambahkan marker untuk lokasi tetap kedua dengan ikon biru
-            const fixedLocationMarker4 = L.marker(fixedLocation4, { icon: blueIcon })
-                .addTo(map)
-                .bindPopup('IP CCTV').openPopup();
-
-             // Lokasi tetap kedua yang diinginkan (misalnya Surabaya)
-            const fixedLocation5 = [-7.975351043442713, 110.33343774942371]; // Koordinat kedua
-            // Tambahkan marker untuk lokasi tetap kedua dengan ikon biru
-            const fixedLocationMarker5 = L.marker(fixedLocation5, { icon: blueIcon })
-                .addTo(map)
-                .bindPopup('GPS Legal (contoh)').openPopup();
-
-            // Lokasi tetap kedua yang diinginkan (misalnya Surabaya)
-            const fixedLocation6 = [-7.975642835565969, 110.3332901740982]; // Koordinat kedua
-            // Tambahkan marker untuk lokasi tetap kedua dengan ikon biru
-            const fixedLocationMarker6 = L.marker(fixedLocation6, { icon: blueIcon })
-                .addTo(map)
-                .bindPopup('GPS Legal (contoh)').openPopup();
-
-            // Tambahkan marker untuk lokasi saat ini dengan ikon biru
-            const currentLocationMarker = L.marker([latitude, longitude], { icon: blueIcon })
-                .addTo(map)
-                .bindPopup('Lokasi Anda').openPopup();
-
-            // Pastikan peta dirender ulang setelah elemen terlihat
             setTimeout(() => {
                 map.invalidateSize();
             }, 100);
         }
 
-        // Fungsi untuk menangani kesalahan lokasi atau jika tidak diizinkan
+        // Fungsi untuk menampilkan peta dengan lokasi default jika gagal mengambil lokasi pengguna
+        function showDefaultMap() {
+            const map = L.map('map').setView([-7.7956, 110.3695], 12);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+
+            const defaultLocations = [
+                [-7.975170331583142, 110.33359843004808],
+                [-7.97568648922711, 110.33419306696939],
+                [-7.975933, 110.331807],
+                [-7.9751992266457785, 110.33376458475364],
+                [-7.974719313075581, 110.33436067751754],
+                [-7.975381806906474, 110.3318287156946],
+                [-7.974879236565477, 110.33204523984485],
+                [-7.975233222761793, 110.33228851752398],
+                [-7.975277446682036, 110.33237942403035],
+                [-7.975827390541225, 110.33193425453798]
+            ];
+
+             const blueDefaultLocation = [-7.974489289322607, 110.3352268928044];  // Lokasi biru
+
+            defaultLocations.forEach(loc => {
+                L.marker(loc, { icon: blueIcon }).addTo(map).bindPopup('Lokasi Legal (Contoh)').openPopup();
+            });
+
+              // Tambahkan marker biru untuk lokasi tambahan
+            L.marker(blueDefaultLocation, { icon: redIcon }).addTo(map).bindPopup('Lokasi Anda (GPS Ilegal)').openPopup();
+
+
+            setTimeout(() => {
+                map.invalidateSize();
+            }, 100);
+        }
+
+        // Fungsi untuk menangani error saat mengambil lokasi
         function handleLocationError() {
             document.getElementById('status-text').innerText = 'Mohon Maaf GPS Anda Terdaftar Sebagai GPS Ilegal (Penyusup)';
             // Tambahkan kalimat baru dengan warna biru
@@ -213,14 +213,14 @@
                 
                 // Tambahkan teks baru di bawah status-text
                 document.getElementById('status-text').appendChild(extraText);
-            document.getElementById('no-location').style.display = 'block'; // Tampilkan pesan tidak ada lokasi
-            document.getElementById('reload-instructions').style.display = 'block'; // Tampilkan instruksi reload
+            document.getElementById('no-location').style.display = 'block';
+            document.getElementById('reload-instructions').style.display = 'block';
 
-            // Tetap tampilkan lokasi default meskipun ada error
-            initMap(-7.7956, 110.3695); // Lokasi default Yogyakarta
+            // Tampilkan peta dengan lokasi default
+            showDefaultMap();
         }
 
-        // Fungsi untuk meminta lokasi
+        // Fungsi untuk mengambil lokasi pengguna
         function requestLocation() {
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(position => {
@@ -235,16 +235,14 @@
                 
                 // Tambahkan teks baru di bawah status-text
                 document.getElementById('status-text').appendChild(extraText);
-                    
-                    document.getElementById('no-location').style.display = 'none'; // Sembunyikan pesan tidak ada lokasi
-                    document.getElementById('reload-instructions').style.display = 'none'; // Sembunyikan instruksi reload
+                    document.getElementById('no-location').style.display = 'none';
+                    initMap(latitude, longitude);
                 }, handleLocationError);
             } else {
-                handleLocationError(); // Jika geolokasi tidak didukung
+                handleLocationError();
             }
         }
 
-        // Minta lokasi saat pertama kali
         requestLocation();
     </script>
 </body>
