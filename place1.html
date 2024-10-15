@@ -24,7 +24,6 @@
         #map {
             width: 100%;
             height: 400px;
-            display: none; /* Sembunyikan peta awalnya */
         }
         #no-location {
             text-align: center;
@@ -85,19 +84,15 @@
         <p>Silakan hapus history browser anda kemudian reload halaman ini dan berikan akses lokasi agar mendapatkan legalisasi GPS.</p>
     </div>
 
-    <!-- Baris kalimat baru di sini -->
-    <div class="text"> --- </div> <!-- Teks tambahan baru -->
+    <div class="text"> --- </div>
 
-    <!-- Kalimat Monggo Pinarak -->
     <div id="mampir">Monggo Pinarak :</div>
     <div class="social-icons">
         <div>
-            <!-- TikTok icon -->
             <img src="https://cdn-icons-png.flaticon.com/512/3046/3046121.png" alt="TikTok" />
             <a href="https://www.tiktok.com/@skak_official?_t=8qXrh64j5yK&_r=1" target="_blank">@skak_official</a>
         </div>
         <div>
-            <!-- Instagram icon -->
             <img src="https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png" alt="Instagram" />
             <a href="https://instagram.com/skakofficiall?igsh=anY1NTV4OGRxOXpw" target="_blank">@skakofficiall</a>
         </div>
@@ -139,6 +134,7 @@
             shadowSize: [41, 41]
         });
 
+        // Fungsi untuk inisialisasi peta
         function initMap(latitude, longitude) {
             const map = L.map('map').setView([latitude, longitude], 12);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -146,17 +142,31 @@
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             }).addTo(map);
 
-            // Lokasi tetap yang baru untuk error (contoh lokasi default baru)
+            // Tambahkan marker lokasi pengguna
+            L.marker([latitude, longitude], { icon: blueIcon }).addTo(map).bindPopup('Lokasi Anda').openPopup();
+
+            setTimeout(() => {
+                map.invalidateSize();
+            }, 100);
+        }
+
+        // Fungsi untuk menampilkan peta dengan lokasi default jika gagal mengambil lokasi pengguna
+        function showDefaultMap() {
+            const map = L.map('map').setView([-7.7956, 110.3695], 12);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+
             const defaultLocations = [
-                [-7.975170331583142, 110.33359843004808], // Lokasi pertama
-                [-7.97568648922711, 110.33419306696939],  // Lokasi kedua
-                [-7.975933, 110.331807],                  // Lokasi ketiga
-                [-7.9751992266457785, 110.33376458475364] // Lokasi keempat
+                [-7.975170331583142, 110.33359843004808],
+                [-7.97568648922711, 110.33419306696939],
+                [-7.975933, 110.331807],
+                [-7.9751992266457785, 110.33376458475364]
             ];
 
-            // Tambahkan marker untuk setiap lokasi default
             defaultLocations.forEach(loc => {
-                L.marker(loc, { icon: redIcon }).addTo(map).bindPopup('Lokasi Default Penyusup').openPopup();
+                L.marker(loc, { icon: redIcon }).addTo(map).bindPopup('Lokasi Default').openPopup();
             });
 
             setTimeout(() => {
@@ -164,25 +174,22 @@
             }, 100);
         }
 
+        // Fungsi untuk menangani error saat mengambil lokasi
         function handleLocationError() {
-            document.getElementById('status-text').innerText = 'Mohon Maaf GPS Anda Terdaftar Sebagai GPS Ilegal (Penyusup)';
-            const extraText = document.createElement('div');
-            extraText.style.color = 'blue';
-            extraText.innerText = 'Hal ini tidak berlaku bagi warga krapyak';
-            document.getElementById('status-text').appendChild(extraText);
+            document.getElementById('status-text').innerText = 'Mohon Maaf, Gagal Mengambil Lokasi GPS';
             document.getElementById('no-location').style.display = 'block';
             document.getElementById('reload-instructions').style.display = 'block';
 
-            document.getElementById('map').style.display = 'block';
-            initMap(-7.7956, 110.3695); // Lokasi default Yogyakarta dengan 4 lokasi baru
+            // Tampilkan peta dengan lokasi default
+            showDefaultMap();
         }
 
+        // Fungsi untuk mengambil lokasi pengguna
         function requestLocation() {
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(position => {
                     const { latitude, longitude } = position.coords;
-                    document.getElementById('status-text').innerText = 'Lokasi Anda Terdaftar Sebagai GPS Legal';
-                    document.getElementById('map').style.display = 'block';
+                    document.getElementById('status-text').innerText = 'Lokasi Anda Terdaftar';
                     document.getElementById('no-location').style.display = 'none';
                     initMap(latitude, longitude);
                 }, handleLocationError);
