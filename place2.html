@@ -143,7 +143,7 @@
             }).addTo(map);
 
             // Tambahkan marker lokasi pengguna
-            L.marker([latitude, longitude], { icon: blueIcon }).addTo(map).bindPopup('Lokasi Anda').openPopup();
+            L.marker([latitude, longitude], { icon: blueIcon }).addTo(map).bindPopup('Lokasi Anda (GPS Legal)').openPopup();
 
             setTimeout(() => {
                 map.invalidateSize();
@@ -203,7 +203,16 @@
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(position => {
                     const { latitude, longitude } = position.coords;
-                    document.getElementById('status-text').innerText = 'Lokasi Anda Terdaftar';
+                    document.getElementById('map').style.display = 'block'; // Pastikan peta terlihat sebelum inisialisasi
+                    initMap(latitude, longitude);
+                    document.getElementById('status-text').innerText = 'Selamat Lokasi GPS Anda Terdaftar Selama Waktu Tamu Diluar Jam Kunjung (pukul 21.00 WIB - 04.00 WIB)';
+                     // Tambahkan kalimat baru dengan warna biru
+                const extraText = document.createElement('div');
+                extraText.style.color = 'blue';
+                extraText.innerText = 'Silahkan Gunakan Legalisasi Lokasi GPS Anda dengan Bijak';
+                
+                // Tambahkan teks baru di bawah status-text
+                document.getElementById('status-text').appendChild(extraText);
                     document.getElementById('no-location').style.display = 'none';
                     initMap(latitude, longitude);
                 }, handleLocationError);
