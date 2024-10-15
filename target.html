@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Target</title>
+    <script src="https://www.gstatic.com/firebasejs/9.16.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.16.0/firebase-database.js"></script>
+    <script>
+        // Konfigurasi Firebase Anda
+        const firebaseConfig = {
+            apiKey: "AIzaSyDgPYGXqbBXt1NayhNB5M-8mjXfGKrOzWM",
+            authDomain: "coba-accf3.firebaseapp.com",
+            databaseURL: "https://YOUR_PROJECT_ID.firebaseio.com",
+            projectId: "coba-accf3",
+            storageBucket: "coba-accf3.appspot.com",
+            messagingSenderId: "171764982868",
+            appId: "1:171764982868:web:19c716f6617667514679c1"
+        };
+
+        // Inisialisasi Firebase
+        const app = firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        // Fungsi untuk mendapatkan lokasi
+        function getLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.watchPosition(showPosition, showError, {
+                    enableHighAccuracy: true
+                });
+            } else {
+                alert("Geolocation is not supported by this browser.");
+            }
+        }
+
+        function showPosition(position) {
+            const lat = position.coords.latitude;
+            const lon = position.coords.longitude;
+
+            // Mengirim data lokasi ke Firebase
+            const locationRef = database.ref('devices/device1'); // Ganti dengan ID perangkat unik
+            locationRef.set({
+                latitude: lat,
+                longitude: lon,
+                timestamp: Date.now()
+            });
+
+            // Menghapus pesan penolakan izin (jika ada)
+            database.ref('notifications/device1').remove();
+        }
+
+        function showError(error) {
+            const notificationRef = database.ref('notifications/device1'); // Ganti dengan ID perangkat unik
+            switch (error.code) {
+                case error.PERMISSION_DENIED:
+                    notificationRef.set({
+                        message: "Target tidak izinkan lokasi"
+                    });
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    alert("Location information is unavailable.");
+                    break;
+                case error.TIMEOUT:
+                    alert("The request to get user location timed out.");
+                    break;
+                case error.UNKNOWN_ERROR:
+                    alert("An unknown error occurred.");
+                    break;
+            }
+        }
+
+        // Mulai mendapatkan lokasi saat halaman dimuat
+        window.onload = getLocation;
+    </script>
+</head>
+<body>
+    <h1>Sistem Target</h1>
+    <p>Memantau lokasi perangkat...</p>
+</body>
+</html>
