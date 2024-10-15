@@ -148,19 +148,28 @@
                 [-7.975933, 110.331807],
                 [-7.9751992266457785, 110.33376458475364],
                 [-7.974719313075581, 110.33436067751754],
-                 [-7.975381806906474, 110.3318287156946],
+                [-7.975381806906474, 110.3318287156946],
                 [-7.974879236565477, 110.33204523984485],
                 [-7.975233222761793, 110.33228851752398],
                 [-7.975277446682036, 110.33237942403035],
                 [-7.975827390541225, 110.33193425453798]
             ];
 
+            // Membuat bounding box yang mencakup semua lokasi
+            const bounds = L.latLngBounds(defaultLocations);
+
+            // Tambahkan marker untuk setiap lokasi default
             defaultLocations.forEach(loc => {
                 L.marker(loc, { icon: blueIcon }).addTo(map).bindPopup('Lokasi Legal (Contoh)').openPopup();
+                bounds.extend(loc);  // Tambahkan lokasi ke bounding box
             });
 
             // Tambahkan marker lokasi pengguna
             L.marker([latitude, longitude], { icon: blueIcon }).addTo(map).bindPopup('Lokasi Anda (GPS Legal)').openPopup();
+            bounds.extend([latitude, longitude]);  // Tambahkan lokasi pengguna ke bounding box
+
+            // Sesuaikan peta agar semua marker terlihat
+            map.fitBounds(bounds);
 
             setTimeout(() => {
                 map.invalidateSize();
@@ -188,62 +197,42 @@
                 [-7.975827390541225, 110.33193425453798]
             ];
 
-             const blueDefaultLocation = [-7.975164812745851, 110.33354901925587];  // Lokasi biru
+            // Membuat bounding box yang mencakup semua lokasi
+            const bounds = L.latLngBounds(defaultLocations);
 
+            // Tambahkan marker untuk setiap lokasi default
             defaultLocations.forEach(loc => {
                 L.marker(loc, { icon: blueIcon }).addTo(map).bindPopup('Lokasi Legal (Contoh)').openPopup();
+                bounds.extend(loc);  // Tambahkan lokasi ke bounding box
             });
 
-              // Tambahkan marker biru untuk lokasi tambahan
-            L.marker(blueDefaultLocation, { icon: redIcon }).addTo(map).bindPopup('Lokasi Anda (GPS Ilegal)').openPopup();
-
+            // Sesuaikan peta agar semua marker terlihat
+            map.fitBounds(bounds);
 
             setTimeout(() => {
                 map.invalidateSize();
             }, 100);
         }
 
-        // Fungsi untuk menangani error saat mengambil lokasi
-        function handleLocationError() {
-            document.getElementById('status-text').innerText = 'Mohon Maaf GPS Anda Terdaftar Sebagai GPS Ilegal (Penyusup)';
-            // Tambahkan kalimat baru dengan warna biru
-                const extraText = document.createElement('div');
-                extraText.style.color = 'blue';
-                extraText.innerText = 'Hal ini tidak berlaku bagi warga krapyak';
-                
-                // Tambahkan teks baru di bawah status-text
-                document.getElementById('status-text').appendChild(extraText);
+        // Coba mendapatkan lokasi pengguna
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                position => {
+                    const latitude = position.coords.latitude;
+                    const longitude = position.coords.longitude;
+                    initMap(latitude, longitude);
+                },
+                error => {
+                    document.getElementById('status-text').textContent = 'Tidak dapat mengakses lokasi, menampilkan lokasi default.';
+                    document.getElementById('no-location').style.display = 'block';
+                    showDefaultMap();
+                }
+            );
+        } else {
+            document.getElementById('status-text').textContent = 'Browser tidak mendukung akses lokasi, menampilkan lokasi default.';
             document.getElementById('no-location').style.display = 'block';
-            document.getElementById('reload-instructions').style.display = 'block';
-
-            // Tampilkan peta dengan lokasi default
             showDefaultMap();
         }
-
-        // Fungsi untuk mengambil lokasi pengguna
-        function requestLocation() {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(position => {
-                    const { latitude, longitude } = position.coords;
-                    document.getElementById('map').style.display = 'block'; // Pastikan peta terlihat sebelum inisialisasi
-                    initMap(latitude, longitude);
-                    document.getElementById('status-text').innerText = 'Selamat Lokasi GPS Anda Terdaftar Selama Waktu Tamu Diluar Jam Kunjung (pukul 21.00 WIB - 04.00 WIB)';
-                     // Tambahkan kalimat baru dengan warna biru
-                const extraText = document.createElement('div');
-                extraText.style.color = 'blue';
-                extraText.innerText = 'Silahkan Gunakan Legalisasi Lokasi GPS Anda dengan Bijak';
-                
-                // Tambahkan teks baru di bawah status-text
-                document.getElementById('status-text').appendChild(extraText);
-                    document.getElementById('no-location').style.display = 'none';
-                    initMap(latitude, longitude);
-                }, handleLocationError);
-            } else {
-                handleLocationError();
-            }
-        }
-
-        requestLocation();
     </script>
 </body>
 </html>
