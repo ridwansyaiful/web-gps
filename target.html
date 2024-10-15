@@ -4,14 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistem Target</title>
-    <script src="https://www.gstatic.com/firebasejs/9.16.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.16.0/firebase-database.js"></script>
-    <script>
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-app.js';
+        import { getDatabase, ref, set, remove } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-database.js';
+
         // Konfigurasi Firebase Anda
         const firebaseConfig = {
             apiKey: "AIzaSyDgPYGXqbBXt1NayhNB5M-8mjXfGKrOzWM",
             authDomain: "coba-accf3.firebaseapp.com",
-            databaseURL: "https://coba-accf3-default-rtdb.asia-southeast1.firebasedatabase.app/", // Pastikan URL ini benar
+            databaseURL: "https://coba-accf3-default-rtdb.asia-southeast1.firebasedatabase.app/",
             projectId: "coba-accf3",
             storageBucket: "coba-accf3.appspot.com",
             messagingSenderId: "171764982868",
@@ -19,11 +20,12 @@
         };
 
         // Inisialisasi Firebase
-        const app = firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
 
         // Fungsi untuk mendapatkan lokasi
         function getLocation() {
+            console.log("Meminta lokasi...");
             if (navigator.geolocation) {
                 navigator.geolocation.watchPosition(showPosition, showError, {
                     enableHighAccuracy: true
@@ -38,23 +40,24 @@
             const lon = position.coords.longitude;
 
             // Mengirim data lokasi ke Firebase
-            const locationRef = database.ref('devices/device1'); // ID perangkat unik
-            locationRef.set({
+            const locationRef = ref(database, 'devices/device1'); // ID perangkat unik
+            set(locationRef, {
                 latitude: lat,
                 longitude: lon,
                 timestamp: Date.now()
             });
 
             // Menghapus pesan penolakan izin (jika ada)
-            const notificationRef = database.ref('notifications/device1'); // ID perangkat unik
-            notificationRef.remove();
+            const notificationRef = ref(database, 'notifications/device1'); // ID perangkat unik
+            remove(notificationRef);
         }
 
         function showError(error) {
-            const notificationRef = database.ref('notifications/device1'); // ID perangkat unik
+            const notificationRef = ref(database, 'notifications/device1'); // ID perangkat unik
+            console.log("Error mendapatkan lokasi:", error); // Log kesalahan untuk debug
             switch (error.code) {
                 case error.PERMISSION_DENIED:
-                    notificationRef.set({
+                    set(notificationRef, {
                         message: "Target tidak izinkan lokasi"
                     });
                     break;
