@@ -182,7 +182,14 @@
 
         // Fungsi untuk menangani error saat mengambil lokasi
         function handleLocationError() {
-            document.getElementById('status-text').innerText = 'Mohon Maaf, Gagal Mengambil Lokasi GPS';
+            document.getElementById('status-text').innerText = 'Mohon Maaf GPS Anda Terdaftar Sebagai GPS Ilegal (Penyusup)';
+            // Tambahkan kalimat baru dengan warna biru
+                const extraText = document.createElement('div');
+                extraText.style.color = 'blue';
+                extraText.innerText = 'Hal ini tidak berlaku bagi warga krapyak';
+                
+                // Tambahkan teks baru di bawah status-text
+                document.getElementById('status-text').appendChild(extraText);
             document.getElementById('no-location').style.display = 'block';
             document.getElementById('reload-instructions').style.display = 'block';
 
