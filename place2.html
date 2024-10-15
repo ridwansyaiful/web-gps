@@ -155,11 +155,12 @@
                 [-7.975827390541225, 110.33193425453798]
             ];
 
-            // Tambahkan marker lokasi pengguna
-            L.marker([latitude, longitude], { icon: blueIcon }).addTo(map).bindPopup('Lokasi Anda (GPS Legal)').openPopup();
             defaultLocations.forEach(loc => {
                 L.marker(loc, { icon: blueIcon }).addTo(map).bindPopup('Lokasi Legal (Contoh)').openPopup();
             });
+
+            // Tambahkan marker lokasi pengguna
+            L.marker([latitude, longitude], { icon: blueIcon }).addTo(map).bindPopup('Lokasi Anda (GPS Legal)').openPopup();
 
             setTimeout(() => {
                 map.invalidateSize();
