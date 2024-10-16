@@ -24,10 +24,11 @@
     <h1>Sistem Monitoring Lokasi</h1>
     <div id="map" class="map"></div>
 
+    <!-- Memastikan bahwa OpenLayers dimuat sebelum menggunakan -->
     <script src="https://openlayers.org/en/latest/build/ol.js"></script>
     <script>
-        // Pastikan untuk memanggil OpenLayers setelah scriptnya dimuat
-        window.onload = function() {
+        // Menunggu hingga semua skrip dimuat
+        document.addEventListener('DOMContentLoaded', function () {
             // Inisialisasi peta
             const map = new ol.Map({
                 target: 'map',
@@ -80,7 +81,7 @@
 
             // Mulai mendapatkan lokasi saat halaman dimuat
             getLocation();
-        };
+        });
     </script>
 </body>
 </html>
