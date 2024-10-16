@@ -3,10 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Target</title>
+    <title>Sistem Monitoring</title>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <style>
+        /* Atur tinggi peta */
+        #map {
+            height: 400px; /* Atur tinggi peta */
+            width: 100%; /* Lebar penuh */
+        }
+    </style>
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-app.js';
-        import { getDatabase, ref, set, remove } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-database.js';
+        import { getMessaging, getToken, onMessage } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-messaging.js';
 
         // Konfigurasi Firebase Anda
         const firebaseConfig = {
@@ -21,73 +32,76 @@
 
         // Inisialisasi Firebase
         const app = initializeApp(firebaseConfig);
-        const database = getDatabase(app);
+        const messaging = getMessaging(app);
 
-        // Fungsi untuk mendapatkan lokasi
-        function getLocation() {
-            console.log("Meminta lokasi...");
-            if (navigator.geolocation) {
-                navigator.geolocation.watchPosition(showPosition, showError, {
-                    enableHighAccuracy: true
+        // Meminta izin untuk mengirim notifikasi
+        Notification.requestPermission().then((permission) => {
+            if (permission === 'granted') {
+                console.log('Notification permission granted.');
+                // Mendapatkan token FCM
+                getToken(messaging, { vapidKey: 'YOUR_PUBLIC_VAPID_KEY' }).then((currentToken) => {
+                    if (currentToken) {
+                        console.log('FCM Token:', currentToken);
+                        // Kirim token ke server Anda untuk disimpan
+                    } else {
+                        console.log('No registration token available. Request permission to generate one.');
+                    }
+                }).catch((err) => {
+                    console.log('An error occurred while retrieving token. ', err);
                 });
             } else {
-                alert("Geolocation tidak didukung oleh browser ini.");
+                console.log('Unable to get permission to notify.');
             }
+        });
+
+        // Menangani notifikasi yang diterima saat aplikasi aktif
+        onMessage(messaging, (payload) => {
+            console.log('Message received. ', payload);
+            // Tampilkan notifikasi
+            const notificationTitle = payload.notification.title;
+            const notificationOptions = {
+                body: payload.notification.body,
+                icon: '/icon-192x192.png' // Ganti dengan ikon yang sesuai
+            };
+            new Notification(notificationTitle, notificationOptions);
+        });
+
+        // Inisialisasi peta
+        const map = L.map('map').setView([-6.2001, 106.8456], 13); // Koordinat awal
+
+        // Menambahkan layer peta dari OpenStreetMap
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+        }).addTo(map);
+
+        // Fungsi untuk menampilkan lokasi
+        function updateMap(lat, lon) {
+            // Menghapus marker lama jika ada
+            if (window.marker) {
+                map.removeLayer(window.marker);
+            }
+            // Tambahkan marker ke peta
+            window.marker = L.marker([lat, lon]).addTo(map);
+            map.setView([lat, lon], 15); // Pindahkan peta ke lokasi baru dan zoom level 15
         }
 
-        function showPosition(position) {
-            const lat = position.coords.latitude;
-            const lon = position.coords.longitude;
-
-            // Mengirim data lokasi ke Firebase
+        // Fungsi untuk mendapatkan data dari Firebase
+        function getLocationFromFirebase() {
             const locationRef = ref(database, 'devices/device1'); // ID perangkat unik
-            set(locationRef, {
-                latitude: lat,
-                longitude: lon,
-                timestamp: Date.now()
+            onValue(locationRef, (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    updateMap(data.latitude, data.longitude);
+                }
             });
-
-            // Menghapus pesan penolakan izin (jika ada)
-            const notificationRef = ref(database, 'notifications/device1'); // ID perangkat unik
-            remove(notificationRef);
-
-            // Mengirim WhatsApp
-            sendWhatsApp(`Lokasi saya: https://www.google.com/maps/@${lat},${lon},15z`);
         }
 
-        function showError(error) {
-            const notificationRef = ref(database, 'notifications/device1'); // ID perangkat unik
-            console.log("Error mendapatkan lokasi:", error); // Log kesalahan untuk debug
-            switch (error.code) {
-                case error.PERMISSION_DENIED:
-                    set(notificationRef, {
-                        message: "Target tidak izinkan lokasi"
-                    });
-                    break;
-                case error.POSITION_UNAVAILABLE:
-                    alert("Informasi lokasi tidak tersedia.");
-                    break;
-                case error.TIMEOUT:
-                    alert("Permintaan untuk mendapatkan lokasi pengguna telah waktunya habis.");
-                    break;
-                case error.UNKNOWN_ERROR:
-                    alert("Terjadi kesalahan yang tidak diketahui.");
-                    break;
-            }
-        }
-
-        function sendWhatsApp(message) {
-            const phoneNumber = "1234567890"; // Ganti dengan nomor telepon yang diinginkan
-            const url = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
-            window.open(url, '_blank'); // Buka WhatsApp di tab baru
-        }
-
-        // Mulai mendapatkan lokasi saat halaman dimuat
-        window.onload = getLocation;
+        // Mulai mendapatkan data lokasi dari Firebase saat halaman dimuat
+        window.onload = getLocationFromFirebase;
     </script>
 </head>
 <body>
-    <h1>Sistem Target</h1>
-    <p>Memantau lokasi perangkat...</p>
+    <h1>Sistem Monitoring</h1>
+    <div id="map"></div> <!-- Elemen untuk peta -->
 </body>
 </html>
