@@ -11,7 +11,7 @@
 
         // Konfigurasi Firebase Anda
         const firebaseConfig = {
-            apiKey: "API_KEY",
+            apiKey: "AIzaSyDgPYGXqbBXt1NayhNB5M-8mjXfGKrOzWM",
             authDomain: "coba-accf3.firebaseapp.com",
             databaseURL: "https://coba-accf3-default-rtdb.asia-southeast1.firebasedatabase.app/",
             projectId: "coba-accf3",
@@ -81,5 +81,18 @@
 <body>
     <h1>Sistem Target</h1>
     <p>Memantau lokasi perangkat...</p>
+
+    <script>
+        // Registrasi Service Worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js')
+            .then((registration) => {
+                console.log('Service Worker registered with scope:', registration.scope);
+            })
+            .catch((error) => {
+                console.log('Service Worker registration failed:', error);
+            });
+        }
+    </script>
 </body>
 </html>
