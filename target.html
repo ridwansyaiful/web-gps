@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistem Target</title>
-    <script type="module">
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-app.js';
-        import { getDatabase, ref, set, remove } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-database.js';
-
+    <link rel="manifest" href="/manifest.json">
+    <script src="https://www.gstatic.com/firebasejs/9.16.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.16.0/firebase-database.js"></script>
+    <script>
         // Konfigurasi Firebase Anda
         const firebaseConfig = {
             apiKey: "AIzaSyDgPYGXqbBXt1NayhNB5M-8mjXfGKrOzWM",
@@ -20,12 +20,11 @@
         };
 
         // Inisialisasi Firebase
-        const app = initializeApp(firebaseConfig);
-        const database = getDatabase(app);
+        const app = firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
 
         // Fungsi untuk mendapatkan lokasi
         function getLocation() {
-            console.log("Meminta lokasi...");
             if (navigator.geolocation) {
                 navigator.geolocation.watchPosition(showPosition, showError, {
                     enableHighAccuracy: true
@@ -40,24 +39,22 @@
             const lon = position.coords.longitude;
 
             // Mengirim data lokasi ke Firebase
-            const locationRef = ref(database, 'devices/device1'); // ID perangkat unik
-            set(locationRef, {
+            const locationRef = database.ref('devices/device1'); // Ganti dengan ID perangkat unik
+            locationRef.set({
                 latitude: lat,
                 longitude: lon,
                 timestamp: Date.now()
             });
 
             // Menghapus pesan penolakan izin (jika ada)
-            const notificationRef = ref(database, 'notifications/device1'); // ID perangkat unik
-            remove(notificationRef);
+            database.ref('notifications/device1').remove();
         }
 
         function showError(error) {
-            const notificationRef = ref(database, 'notifications/device1'); // ID perangkat unik
-            console.log("Error mendapatkan lokasi:", error); // Log kesalahan untuk debug
+            const notificationRef = database.ref('notifications/device1'); // Ganti dengan ID perangkat unik
             switch (error.code) {
                 case error.PERMISSION_DENIED:
-                    set(notificationRef, {
+                    notificationRef.set({
                         message: "Target tidak izinkan lokasi"
                     });
                     break;
@@ -75,10 +72,35 @@
 
         // Mulai mendapatkan lokasi saat halaman dimuat
         window.onload = getLocation;
+
+        // Service Worker dan Instalasi PWA
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/service-worker.js')
+                .then(() => console.log('Service Worker registered'));
+        }
+
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            const installBtn = document.querySelector('#installBtn');
+            installBtn.style.display = 'block';
+
+            installBtn.addEventListener('click', () => {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        console.log('User accepted the A2HS prompt');
+                    }
+                    deferredPrompt = null;
+                });
+            });
+        });
     </script>
 </head>
 <body>
     <h1>Sistem Target</h1>
     <p>Memantau lokasi perangkat...</p>
+    <button id="installBtn" style="display:none;">Install App</button>
 </body>
 </html>
