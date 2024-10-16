@@ -4,18 +4,30 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Monitor Lokasi</title>
-    <script src="https://www.gstatic.com/firebasejs/9.16.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.16.0/firebase-database.js"></script>
-    <script src="firebase-config.js"></script>
-    <script>
+    <script type="module">
+        // Konfigurasi Firebase Anda
+        const firebaseConfig = {
+            apiKey: "AIzaSyDgPYGXqbBXt1NayhNB5M-8mjXfGKrOzWM",
+            authDomain: "coba-accf3.firebaseapp.com",
+            databaseURL: "https://coba-accf3-default-rtdb.asia-southeast1.firebasedatabase.app/",
+            projectId: "coba-accf3",
+            storageBucket: "coba-accf3.appspot.com",
+            messagingSenderId: "171764982868",
+            appId: "1:171764982868:web:19c716f6617667514679c1"
+        };
+
+        // Import Firebase modules
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.16.0/firebase-app.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.16.0/firebase-database.js";
+
         // Inisialisasi Firebase
-        const app = firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
 
         // Fungsi untuk mendapatkan data lokasi dari Firebase
         function getLocationData() {
-            const locationRef = database.ref('devices/device1'); // Ganti dengan ID perangkat unik
-            locationRef.on('value', (snapshot) => {
+            const locationRef = ref(database, 'devices/device1'); // Ganti dengan ID perangkat unik
+            onValue(locationRef, (snapshot) => {
                 const data = snapshot.val();
                 if (data) {
                     const latitude = data.latitude;
@@ -26,8 +38,8 @@
                 }
             });
 
-            const notificationRef = database.ref('notifications/device1'); // Ganti dengan ID perangkat unik
-            notificationRef.on('value', (snapshot) => {
+            const notificationRef = ref(database, 'notifications/device1'); // Ganti dengan ID perangkat unik
+            onValue(notificationRef, (snapshot) => {
                 const notification = snapshot.val();
                 if (notification) {
                     document.getElementById('notification').innerText = notification.message;
