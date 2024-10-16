@@ -3,9 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Monitor</title>
-    <link rel="manifest" href="manifest.json">
+    <title>Sistem Monitoring</title>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+        /* Atur tinggi peta */
+        #map {
+            height: 400px; /* Atur tinggi peta */
+            width: 100%; /* Lebar penuh */
+        }
+    </style>
     <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-app.js';
+        import { getDatabase, ref, onValue } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-database.js';
+
         // Konfigurasi Firebase Anda
         const firebaseConfig = {
             apiKey: "AIzaSyDgPYGXqbBXt1NayhNB5M-8mjXfGKrOzWM",
@@ -17,32 +28,42 @@
             appId: "1:171764982868:web:19c716f6617667514679c1"
         };
 
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.16.0/firebase-app.js";
-        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.16.0/firebase-database.js";
-
         // Inisialisasi Firebase
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
 
-        // Mengambil dan menampilkan lokasi dari Firebase
-        const locationRef = ref(database, 'devices/device1'); // Ganti dengan ID perangkat unik
-        onValue(locationRef, (snapshot) => {
-            const data = snapshot.val();
-            if (data) {
-                const latitude = data.latitude;
-                const longitude = data.longitude;
-                const timestamp = new Date(data.timestamp).toLocaleString();
+        // Inisialisasi peta
+        const map = L.map('map').setView([-6.2001, 106.8456], 13); // Koordinat awal
 
-                // Menampilkan data di halaman
-                document.getElementById('location').innerText = `Latitude: ${latitude}, Longitude: ${longitude}`;
-                document.getElementById('timestamp').innerText = `Last Updated: ${timestamp}`;
-            }
-        });
+        // Menambahkan layer peta dari OpenStreetMap
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+        }).addTo(map);
+
+        // Fungsi untuk menampilkan lokasi
+        function updateMap(lat, lon) {
+            // Tambahkan marker ke peta
+            const marker = L.marker([lat, lon]).addTo(map);
+            map.setView([lat, lon], 13); // Pindahkan peta ke lokasi baru
+        }
+
+        // Fungsi untuk mendapatkan data dari Firebase
+        function getLocationFromFirebase() {
+            const locationRef = ref(database, 'devices/device1'); // ID perangkat unik
+            onValue(locationRef, (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    updateMap(data.latitude, data.longitude);
+                }
+            });
+        }
+
+        // Mulai mendapatkan data lokasi dari Firebase saat halaman dimuat
+        window.onload = getLocationFromFirebase;
     </script>
 </head>
 <body>
-    <h1>Sistem Monitor</h1>
-    <p id="location">Menunggu lokasi...</p>
-    <p id="timestamp"></p>
+    <h1>Sistem Monitoring</h1>
+    <div id="map"></div> <!-- Elemen untuk peta -->
 </body>
 </html>
