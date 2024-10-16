@@ -26,8 +26,8 @@
 
     <script src="https://openlayers.org/en/latest/build/ol.js"></script>
     <script>
-        // Menunggu hingga halaman sepenuhnya dimuat sebelum menjalankan kode
-        window.onload = function() {
+        // Pastikan untuk memanggil OpenLayers setelah scriptnya dimuat
+        document.addEventListener("DOMContentLoaded", function() {
             // Inisialisasi peta
             const map = new ol.Map({
                 target: 'map',
@@ -80,7 +80,7 @@
 
             // Mulai mendapatkan lokasi saat halaman dimuat
             getLocation();
-        };
+        });
     </script>
 </body>
 </html>
