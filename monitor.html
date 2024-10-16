@@ -3,12 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Monitoring Lokasi dengan OpenLayers</title>
+    <title>Sistem Monitoring Lokasi</title>
     <link rel="stylesheet" href="https://openlayers.org/en/latest/css/ol.css" />
     <style>
         #map {
             height: 400px;
             width: 100%;
+        }
+        .marker {
+            background-color: red;
+            border-radius: 50%;
+            width: 10px;
+            height: 10px;
+            position: absolute;
+            transform: translate(-50%, -50%);
         }
     </style>
 </head>
@@ -18,62 +26,61 @@
 
     <script src="https://openlayers.org/en/latest/build/ol.js"></script>
     <script>
-        // Inisialisasi peta
-        const map = new ol.Map({
-            target: 'map',
-            layers: [
-                new ol.layer.Tile({
-                    source: new ol.source.OSM()
+        // Menunggu hingga halaman sepenuhnya dimuat sebelum menjalankan kode
+        window.onload = function() {
+            // Inisialisasi peta
+            const map = new ol.Map({
+                target: 'map',
+                layers: [
+                    new ol.layer.Tile({
+                        source: new ol.source.OSM()
+                    })
+                ],
+                view: new ol.View({
+                    center: ol.proj.fromLonLat([106.8456, -6.2001]), // Lokasi awal
+                    zoom: 13
                 })
-            ],
-            view: new ol.View({
-                center: ol.proj.fromLonLat([106.8456, -6.2001]), // [lng, lat]
-                zoom: 13
-            })
-        });
-
-        // Mendapatkan lokasi pengguna
-        function getLocation() {
-            if (navigator.geolocation) {
-                navigator.geolocation.watchPosition(showPosition, showError);
-            } else {
-                alert("Geolocation tidak didukung oleh browser ini.");
-            }
-        }
-
-        function showPosition(position) {
-            const lat = position.coords.latitude;
-            const lon = position.coords.longitude;
-
-            // Pindahkan peta ke lokasi baru
-            map.setView(new ol.View({
-                center: ol.proj.fromLonLat([lon, lat]),
-                zoom: 13
-            }));
-
-            // Tambahkan marker lokasi pengguna
-            const marker = new ol.Overlay({
-                position: ol.proj.fromLonLat([lon, lat]),
-                element: document.createElement('div'),
-                positioning: 'bottom-center',
-                stopEvent: false
             });
 
-            marker.getElement().className = 'marker';
-            marker.getElement().style.backgroundColor = 'red';
-            marker.getElement().style.width = '10px';
-            marker.getElement().style.height = '10px';
-            marker.getElement().style.borderRadius = '50%';
+            // Mendapatkan lokasi pengguna
+            function getLocation() {
+                if (navigator.geolocation) {
+                    navigator.geolocation.watchPosition(showPosition, showError);
+                } else {
+                    alert("Geolocation tidak didukung oleh browser ini.");
+                }
+            }
 
-            map.addOverlay(marker);
-        }
+            function showPosition(position) {
+                const lat = position.coords.latitude;
+                const lon = position.coords.longitude;
 
-        function showError(error) {
-            console.error("Error mendapatkan lokasi:", error);
-        }
+                // Pindahkan peta ke lokasi baru
+                map.setView(new ol.View({
+                    center: ol.proj.fromLonLat([lon, lat]),
+                    zoom: 13
+                }));
 
-        // Mulai mendapatkan lokasi saat halaman dimuat
-        window.onload = getLocation;
+                // Tambahkan marker lokasi pengguna
+                const markerElement = document.createElement('div');
+                markerElement.className = 'marker';
+
+                const marker = new ol.Overlay({
+                    position: ol.proj.fromLonLat([lon, lat]),
+                    element: markerElement,
+                    positioning: 'center-center',
+                });
+
+                map.addOverlay(marker);
+            }
+
+            function showError(error) {
+                console.error("Error mendapatkan lokasi:", error);
+            }
+
+            // Mulai mendapatkan lokasi saat halaman dimuat
+            getLocation();
+        };
     </script>
 </body>
 </html>
