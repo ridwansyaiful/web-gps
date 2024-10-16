@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Monitoring Lokasi dengan Leaflet</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <title>Sistem Monitoring Lokasi dengan OpenLayers</title>
+    <link rel="stylesheet" href="https://openlayers.org/en/latest/css/ol.css" />
     <style>
         #map {
             height: 400px;
@@ -14,18 +14,23 @@
 </head>
 <body>
     <h1>Sistem Monitoring Lokasi</h1>
-    <div id="map"></div>
-    
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <div id="map" class="map"></div>
+
+    <script src="https://openlayers.org/en/latest/build/ol.js"></script>
     <script>
         // Inisialisasi peta
-        const map = L.map('map').setView([-6.2001, 106.8456], 13); // Set lokasi awal
-
-        // Menambahkan layer peta OpenStreetMap
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19,
-            attribution: '© OpenStreetMap contributors'
-        }).addTo(map);
+        const map = new ol.Map({
+            target: 'map',
+            layers: [
+                new ol.layer.Tile({
+                    source: new ol.source.OSM()
+                })
+            ],
+            view: new ol.View({
+                center: ol.proj.fromLonLat([106.8456, -6.2001]), // [lng, lat]
+                zoom: 13
+            })
+        });
 
         // Mendapatkan lokasi pengguna
         function getLocation() {
@@ -41,12 +46,27 @@
             const lon = position.coords.longitude;
 
             // Pindahkan peta ke lokasi baru
-            map.setView([lat, lon], 13);
+            map.setView(new ol.View({
+                center: ol.proj.fromLonLat([lon, lat]),
+                zoom: 13
+            }));
 
             // Tambahkan marker lokasi pengguna
-            L.marker([lat, lon]).addTo(map)
-                .bindPopup("Anda berada di sini.")
-                .openPopup();
+            new ol.Overlay({
+                element: document.createElement('div'),
+                positioning: 'bottom-center',
+                stopEvent: false
+            }).setPosition(ol.proj.fromLonLat([lon, lat]));
+
+            const markerElement = document.createElement('div');
+            markerElement.className = 'marker';
+            markerElement.style.backgroundColor = 'red';
+            markerElement.style.width = '10px';
+            markerElement.style.height = '10px';
+            markerElement.style.borderRadius = '50%';
+            markerElement.style.position = 'absolute';
+            markerElement.style.transform = 'translate(-50%, -50%)';
+            document.body.appendChild(markerElement);
         }
 
         function showError(error) {
