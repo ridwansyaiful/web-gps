@@ -3,50 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Monitor</title>
-    <script src="https://www.gstatic.com/firebasejs/9.16.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.16.0/firebase-database-compat.js"></script>
+    <title>Monitor Lokasi</title>
+    <script src="https://www.gstatic.com/firebasejs/9.16.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.16.0/firebase-database.js"></script>
+    <script src="firebase-config.js"></script>
     <script>
-        // Konfigurasi Firebase Anda
-        const firebaseConfig = {
-            apiKey: "AIzaSyDgPYGXqbBXt1NayhNB5M-8mjXfGKrOzWM",
-            authDomain: "coba-accf3.firebaseapp.com",
-            databaseURL: "https://coba-accf3-default-rtdb.asia-southeast1.firebasedatabase.app/",
-            projectId: "coba-accf3",
-            storageBucket: "coba-accf3.appspot.com",
-            messagingSenderId: "171764982868",
-            appId: "1:171764982868:web:19c716f6617667514679c1"
-        };
-
         // Inisialisasi Firebase
         const app = firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
-        // Fungsi untuk memantau perubahan data lokasi di Firebase
-        function monitorLocation() {
-            const locationRef = database.ref('devices/device1'); // Sesuaikan ID perangkat jika diperlukan
-
+        // Fungsi untuk mendapatkan data lokasi dari Firebase
+        function getLocationData() {
+            const locationRef = database.ref('devices/device1'); // Ganti dengan ID perangkat unik
             locationRef.on('value', (snapshot) => {
                 const data = snapshot.val();
                 if (data) {
-                    document.getElementById('latitude').textContent = 'Latitude: ' + data.latitude;
-                    document.getElementById('longitude').textContent = 'Longitude: ' + data.longitude;
-                    document.getElementById('timestamp').textContent = 'Timestamp: ' + new Date(data.timestamp).toLocaleString();
+                    const latitude = data.latitude;
+                    const longitude = data.longitude;
+                    document.getElementById('location').innerText = `Latitude: ${latitude}, Longitude: ${longitude}`;
                 } else {
-                    document.getElementById('status').textContent = 'Tidak ada data lokasi tersedia';
+                    document.getElementById('location').innerText = 'Data tidak tersedia';
+                }
+            });
+
+            const notificationRef = database.ref('notifications/device1'); // Ganti dengan ID perangkat unik
+            notificationRef.on('value', (snapshot) => {
+                const notification = snapshot.val();
+                if (notification) {
+                    document.getElementById('notification').innerText = notification.message;
+                } else {
+                    document.getElementById('notification').innerText = '';
                 }
             });
         }
 
-        // Mulai memantau lokasi saat halaman dimuat
-        window.onload = monitorLocation;
+        // Mulai mendapatkan data lokasi saat halaman dimuat
+        window.onload = getLocationData;
     </script>
 </head>
 <body>
-    <h1>Sistem Monitor</h1>
-    <p id="status">Menunggu lokasi...</p>
-    <p id="latitude">Latitude: </p>
-    <p id="longitude">Longitude: </p>
-    <p id="timestamp">Timestamp: </p>
+    <h1>Monitor Lokasi</h1>
+    <p id="location">Memuat lokasi...</p>
+    <p id="notification" style="color:red;"></p>
 </body>
 </html>
