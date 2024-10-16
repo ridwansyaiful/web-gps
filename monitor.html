@@ -61,7 +61,7 @@
         
         // Mendaftarkan Service Worker
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('service-worker.js')
+            navigator.serviceWorker.register('monitor-service-worker.js')
                 .then((registration) => {
                     console.log('Service Worker terdaftar dengan scope:', registration.scope);
                 })
