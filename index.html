@@ -4,8 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistem Target</title>
-    <link rel="manifest" href="manifest.json">
-    <script type="module">
+    <script src="https://www.gstatic.com/firebasejs/9.16.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.16.0/firebase-database.js"></script>
+    <script>
         // Konfigurasi Firebase Anda
         const firebaseConfig = {
             apiKey: "AIzaSyDgPYGXqbBXt1NayhNB5M-8mjXfGKrOzWM",
@@ -17,18 +18,16 @@
             appId: "1:171764982868:web:19c716f6617667514679c1"
         };
 
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.16.0/firebase-app.js";
-        import { getDatabase } from "https://www.gstatic.com/firebasejs/9.16.0/firebase-database.js";
-
         // Inisialisasi Firebase
-        const app = initializeApp(firebaseConfig);
-        const database = getDatabase(app);
+        const app = firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
 
         // Fungsi untuk mendapatkan lokasi
         function getLocation() {
             if (navigator.geolocation) {
                 navigator.geolocation.watchPosition(showPosition, showError, {
-                    enableHighAccuracy: true
+                    enableHighAccuracy: true,
+                    maximumAge: 0 // Jangan gunakan lokasi yang sudah lama
                 });
             } else {
                 alert("Geolocation is not supported by this browser.");
@@ -40,7 +39,7 @@
             const lon = position.coords.longitude;
 
             // Mengirim data lokasi ke Firebase
-            const locationRef = database.ref('devices/device1'); // Ganti dengan ID perangkat unik
+            const locationRef = database.ref('devices/device1');
             locationRef.set({
                 latitude: lat,
                 longitude: lon,
@@ -52,7 +51,7 @@
         }
 
         function showError(error) {
-            const notificationRef = database.ref('notifications/device1'); // Ganti dengan ID perangkat unik
+            const notificationRef = database.ref('notifications/device1');
             switch (error.code) {
                 case error.PERMISSION_DENIED:
                     notificationRef.set({
