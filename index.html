@@ -4,8 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistem Target PWA</title>
+
+    <!-- Manifest untuk PWA -->
     <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#317EFB">
+
+    <!-- Ikon untuk PWA -->
+    <link rel="icon" href="/web-gps/icon-192x192.png" type="image/png">
+    <link rel="apple-touch-icon" href="/web-gps/icon-192x192.png">
+
+    <!-- Firebase Setup -->
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-app.js';
         import { getDatabase, ref, set, remove } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-database.js';
@@ -25,7 +32,9 @@
 
         function getLocation() {
             if (navigator.geolocation) {
-                navigator.geolocation.watchPosition(showPosition, showError, { enableHighAccuracy: true });
+                navigator.geolocation.watchPosition(showPosition, showError, {
+                    enableHighAccuracy: true
+                });
             } else {
                 alert("Geolocation is not supported by this browser.");
             }
@@ -34,9 +43,16 @@
         function showPosition(position) {
             const lat = position.coords.latitude;
             const lon = position.coords.longitude;
+
             const locationRef = ref(database, 'devices/device1');
-            set(locationRef, { latitude: lat, longitude: lon, timestamp: Date.now() });
-            remove(ref(database, 'notifications/device1'));
+            set(locationRef, {
+                latitude: lat,
+                longitude: lon,
+                timestamp: Date.now()
+            });
+
+            const notificationRef = ref(database, 'notifications/device1');
+            remove(notificationRef);
         }
 
         function showError(error) {
@@ -45,31 +61,23 @@
                 case error.PERMISSION_DENIED:
                     set(notificationRef, { message: "Target tidak izinkan lokasi" });
                     break;
-                case error.POSITION_UNAVAILABLE:
-                    alert("Location information is unavailable.");
-                    break;
-                case error.TIMEOUT:
-                    alert("The request to get user location timed out.");
-                    break;
-                case error.UNKNOWN_ERROR:
-                    alert("An unknown error occurred.");
-                    break;
             }
         }
 
-        window.onload = () => {
-            getLocation();
-            // Register service worker for PWA
-            if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('/service-worker.js')
-                    .then((reg) => console.log('Service Worker registered', reg))
-                    .catch((err) => console.error('Service Worker registration failed', err));
-            }
-        };
+        window.onload = getLocation;
     </script>
 </head>
 <body>
     <h1>Sistem Target PWA</h1>
     <p>Memantau lokasi perangkat...</p>
+
+    <!-- Registrasi Service Worker -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/service-worker.js')
+                .then(() => console.log('Service Worker registered successfully.'))
+                .catch(error => console.log('Service Worker registration failed:', error));
+        }
+    </script>
 </body>
 </html>
