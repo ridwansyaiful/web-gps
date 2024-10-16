@@ -8,7 +8,6 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <link rel="manifest" href="manifest.json"> <!-- Link ke manifest.json -->
     <style>
         /* Atur tinggi peta */
         #map {
@@ -66,20 +65,7 @@
         }
 
         // Mulai mendapatkan data lokasi dari Firebase saat halaman dimuat
-        window.onload = function() {
-            getLocationFromFirebase();
-
-            // Registrasi Service Worker
-            if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('/service-worker.js')
-                .then(function(registration) {
-                    console.log('Service Worker registered with scope:', registration.scope);
-                })
-                .catch(function(error) {
-                    console.log('Service Worker registration failed:', error);
-                });
-            }
-        };
+        window.onload = getLocationFromFirebase;
     </script>
 </head>
 <body>
