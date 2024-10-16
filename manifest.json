@@ -1,18 +1,19 @@
 {
-    "name": "Sistem Target PWA",
-    "short_name": "TargetPWA",
+    "name": "Sistem Monitoring",
+    "short_name": "Monitoring",
     "start_url": "/index.html",
     "display": "standalone",
     "background_color": "#ffffff",
-    "theme_color": "#000000",
+    "theme_color": "#3f51b5",
+    "description": "Aplikasi untuk memantau lokasi perangkat.",
     "icons": [
         {
-            "src": "/web-gps/icon-192x192.png",
+            "src": "icon-192x192.png",
             "sizes": "192x192",
             "type": "image/png"
         },
         {
-            "src": "/web-gps/icon-512x512.png",
+            "src": "icon-512x512.png",
             "sizes": "512x512",
             "type": "image/png"
         }
