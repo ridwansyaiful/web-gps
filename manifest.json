@@ -1,11 +1,6 @@
 {
-    "name": "Sistem Monitoring",
-    "short_name": "Monitoring",
-    "start_url": "/index.html",
-    "display": "standalone",
-    "background_color": "#ffffff",
-    "theme_color": "#3f51b5",
-    "description": "Aplikasi untuk memantau lokasi perangkat.",
+    "short_name": "Sistem Target",
+    "name": "Sistem Monitoring Lokasi Target",
     "icons": [
         {
             "src": "icon-192x192.png",
@@ -17,5 +12,9 @@
             "sizes": "512x512",
             "type": "image/png"
         }
-    ]
+    ],
+    "start_url": "/",
+    "display": "standalone",
+    "theme_color": "#ffffff",
+    "background_color": "#ffffff"
 }
