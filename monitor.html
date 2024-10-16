@@ -32,9 +32,13 @@
                 if (data) {
                     const latitude = data.latitude;
                     const longitude = data.longitude;
+                    const timestamp = new Date(data.timestamp).toLocaleString(); // Format timestamp
+
                     document.getElementById('location').innerText = `Latitude: ${latitude}, Longitude: ${longitude}`;
+                    document.getElementById('time').innerText = `Waktu Terakhir Diperbarui: ${timestamp}`;
                 } else {
                     document.getElementById('location').innerText = 'Data tidak tersedia';
+                    document.getElementById('time').innerText = '';
                 }
             });
 
@@ -56,6 +60,7 @@
 <body>
     <h1>Monitor Lokasi</h1>
     <p id="location">Memuat lokasi...</p>
+    <p id="time">Memuat waktu...</p> <!-- Tambahan untuk waktu -->
     <p id="notification" style="color:red;"></p>
 </body>
 </html>
