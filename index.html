@@ -4,91 +4,81 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistem Target</title>
-    <script src="https://www.gstatic.com/firebasejs/9.16.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.16.0/firebase-database.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.16.0/firebase-messaging.js"></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-        }
-    </style>
-</head>
-<body>
-    <h1>Sistem Target</h1>
-    <p>Lokasi Anda saat ini akan dikirim ke sistem monitor.</p>
-    
-    <script>
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-app.js';
+        import { getDatabase, ref, set, remove } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-database.js';
+
         // Konfigurasi Firebase Anda
         const firebaseConfig = {
             apiKey: "AIzaSyDgPYGXqbBXt1NayhNB5M-8mjXfGKrOzWM",
             authDomain: "coba-accf3.firebaseapp.com",
+            databaseURL: "https://coba-accf3-default-rtdb.asia-southeast1.firebasedatabase.app/",
             projectId: "coba-accf3",
             storageBucket: "coba-accf3.appspot.com",
             messagingSenderId: "171764982868",
-            appId: "1:171764982868:web:19c716f6617667514679c1",
-            databaseURL: "https://coba-accf3-default-rtdb.asia-southeast1.firebasedatabase.app/"
+            appId: "1:171764982868:web:19c716f6617667514679c1"
         };
 
         // Inisialisasi Firebase
-        const app = firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
-        const messaging = firebase.messaging();
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
 
-        // Fungsi untuk mengirim lokasi ke Firebase
-        function sendLocation(latitude, longitude) {
-            const locationRef = database.ref('devices/device1');
-            locationRef.set({ latitude, longitude }).then(() => {
-                console.log("Lokasi berhasil dikirim:", { latitude, longitude });
-                sendNotification("Lokasi diperbarui", `Lat: ${latitude}, Lon: ${longitude}`);
-            });
+        // Fungsi untuk mendapatkan lokasi
+        function getLocation() {
+            console.log("Meminta lokasi...");
+            if (navigator.geolocation) {
+                navigator.geolocation.watchPosition(showPosition, showError, {
+                    enableHighAccuracy: true
+                });
+            } else {
+                alert("Geolocation tidak didukung oleh browser ini.");
+            }
         }
 
-        // Fungsi untuk mengirim notifikasi
-        function sendNotification(title, body) {
-            const payload = {
-                notification: {
-                    title: title,
-                    body: body,
-                    icon: 'icon-192x192.png'
-                }
-            };
-            // Kirim notifikasi ke sistem monitor
-            fetch('https://fcm.googleapis.com/fcm/send', {
-                method: 'POST',
-                headers: {
-                    'Authorization': 'key=YOUR_SERVER_KEY', // Ganti dengan server key Anda
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    to: '/topics/monitor', // Kirim ke topic monitor
-                    notification: {
-                        title: title,
-                        body: body
-                    }
-                })
-            }).then(response => response.json())
-              .then(data => console.log("Notifikasi terkirim:", data))
-              .catch(error => console.error("Error mengirim notifikasi:", error));
+        function showPosition(position) {
+            const lat = position.coords.latitude;
+            const lon = position.coords.longitude;
+
+            // Mengirim data lokasi ke Firebase
+            const locationRef = ref(database, 'devices/device1'); // ID perangkat unik
+            set(locationRef, {
+                latitude: lat,
+                longitude: lon,
+                timestamp: Date.now()
+            });
+
+            // Menghapus pesan penolakan izin (jika ada)
+            const notificationRef = ref(database, 'notifications/device1'); // ID perangkat unik
+            remove(notificationRef);
         }
 
-        // Simulasi mengirim lokasi (contoh)
-        // Anda bisa mengganti ini dengan GPS atau cara lain untuk mendapatkan lokasi
-        sendLocation(-6.2001, 106.8456); // Ganti dengan lokasi yang sesuai
+        function showError(error) {
+            const notificationRef = ref(database, 'notifications/device1'); // ID perangkat unik
+            console.log("Error mendapatkan lokasi:", error); // Log kesalahan untuk debug
+            switch (error.code) {
+                case error.PERMISSION_DENIED:
+                    set(notificationRef, {
+                        message: "Target tidak izinkan lokasi"
+                    });
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    alert("Informasi lokasi tidak tersedia.");
+                    break;
+                case error.TIMEOUT:
+                    alert("Permintaan untuk mendapatkan lokasi pengguna telah waktunya habis.");
+                    break;
+                case error.UNKNOWN_ERROR:
+                    alert("Terjadi kesalahan yang tidak diketahui.");
+                    break;
+            }
+        }
 
-        // Minta izin untuk notifikasi
-        messaging.requestPermission()
-            .then(() => {
-                console.log("Izin notifikasi diberikan.");
-                return messaging.getToken();
-            })
-            .then((token) => {
-                console.log("Token FCM:", token);
-                // Kirim token ke server Anda untuk disimpan
-                // Anda bisa menambahkan kode untuk mengirim token ke server
-            })
-            .catch((err) => {
-                console.error("Izin notifikasi ditolak:", err);
-            });
+        // Mulai mendapatkan lokasi saat halaman dimuat
+        window.onload = getLocation;
     </script>
+</head>
+<body>
+    <h1>Sistem Target</h1>
+    <p>Memantau lokasi perangkat...</p>
 </body>
 </html>
