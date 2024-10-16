@@ -3,13 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Monitoring</title>
+    <title>Sistem Target</title>
+    <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <style>
+        /* Atur tinggi peta */
         #map {
-            height: 400px;
-            width: 100%;
+            height: 400px; /* Atur tinggi peta */
+            width: 100%; /* Lebar penuh */
         }
     </style>
     <script type="module">
@@ -41,11 +44,13 @@
 
         // Fungsi untuk menampilkan lokasi
         function updateMap(lat, lon) {
+            // Menghapus marker lama jika ada
             if (window.marker) {
                 map.removeLayer(window.marker);
             }
+            // Tambahkan marker ke peta
             window.marker = L.marker([lat, lon]).addTo(map);
-            map.setView([lat, lon], 15);
+            map.setView([lat, lon], 15); // Pindahkan peta ke lokasi baru dan zoom level 15
         }
 
         // Fungsi untuk mendapatkan data dari Firebase
@@ -62,20 +67,22 @@
         // Mulai mendapatkan data lokasi dari Firebase saat halaman dimuat
         window.onload = getLocationFromFirebase;
 
-        // Registrasi Service Worker
+        // Pendaftaran Service Worker
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('service-worker.js')
-            .then(registration => {
-                console.log('Service Worker registered with scope:', registration.scope);
-            })
-            .catch(error => {
-                console.error('Service Worker registration failed:', error);
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then(registration => {
+                        console.log('ServiceWorker registered with scope:', registration.scope);
+                    })
+                    .catch(error => {
+                        console.error('ServiceWorker registration failed:', error);
+                    });
             });
         }
     </script>
 </head>
 <body>
-    <h1>Sistem Monitoring</h1>
+    <h1>Sistem Target</h1>
     <div id="map"></div> <!-- Elemen untuk peta -->
 </body>
 </html>
