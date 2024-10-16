@@ -44,9 +44,13 @@
 
         // Fungsi untuk menampilkan lokasi
         function updateMap(lat, lon) {
+            // Menghapus marker lama jika ada
+            if (window.marker) {
+                map.removeLayer(window.marker);
+            }
             // Tambahkan marker ke peta
-            const marker = L.marker([lat, lon]).addTo(map);
-            map.setView([lat, lon], 13); // Pindahkan peta ke lokasi baru
+            window.marker = L.marker([lat, lon]).addTo(map);
+            map.setView([lat, lon], 15); // Pindahkan peta ke lokasi baru dan zoom level 15
         }
 
         // Fungsi untuk mendapatkan data dari Firebase
