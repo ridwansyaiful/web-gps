@@ -50,6 +50,9 @@
             // Menghapus pesan penolakan izin (jika ada)
             const notificationRef = ref(database, 'notifications/device1'); // ID perangkat unik
             remove(notificationRef);
+
+            // Mengirim WhatsApp
+            sendWhatsApp(`Lokasi saya: https://www.google.com/maps/@${lat},${lon},15z`);
         }
 
         function showError(error) {
@@ -71,6 +74,12 @@
                     alert("Terjadi kesalahan yang tidak diketahui.");
                     break;
             }
+        }
+
+        function sendWhatsApp(message) {
+            const phoneNumber = "1234567890"; // Ganti dengan nomor telepon yang diinginkan
+            const url = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+            window.open(url, '_blank'); // Buka WhatsApp di tab baru
         }
 
         // Mulai mendapatkan lokasi saat halaman dimuat
