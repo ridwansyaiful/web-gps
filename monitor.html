@@ -3,38 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="manifest" href="manifest.json">
     <title>Sistem Monitor</title>
-    <script src="https://www.gstatic.com/firebasejs/9.16.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.16.0/firebase-database.js"></script>
-    <script src="firebase-config.js"></script>
-    <script>
-        const app = firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
+    <link rel="manifest" href="manifest.json">
+    <script type="module">
+        // Konfigurasi Firebase Anda
+        const firebaseConfig = {
+            apiKey: "AIzaSyDgPYGXqbBXt1NayhNB5M-8mjXfGKrOzWM",
+            authDomain: "coba-accf3.firebaseapp.com",
+            databaseURL: "https://coba-accf3-default-rtdb.asia-southeast1.firebasedatabase.app/",
+            projectId: "coba-accf3",
+            storageBucket: "coba-accf3.appspot.com",
+            messagingSenderId: "171764982868",
+            appId: "1:171764982868:web:19c716f6617667514679c1"
+        };
 
-        function updateLocation() {
-            const locationRef = database.ref('devices/device1');
-            locationRef.on('value', (snapshot) => {
-                const data = snapshot.val();
-                if (data) {
-                    document.getElementById("location").innerHTML = `Latitude: ${data.latitude}, Longitude: ${data.longitude}`;
-                }
-            });
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.16.0/firebase-app.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.16.0/firebase-database.js";
 
-            const notificationRef = database.ref('notifications/device1');
-            notificationRef.on('value', (snapshot) => {
-                const notification = snapshot.val();
-                if (notification && notification.message) {
-                    alert(notification.message);
-                }
-            });
-        }
+        // Inisialisasi Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
 
-        window.onload = updateLocation;
+        // Mengambil dan menampilkan lokasi dari Firebase
+        const locationRef = ref(database, 'devices/device1'); // Ganti dengan ID perangkat unik
+        onValue(locationRef, (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                const latitude = data.latitude;
+                const longitude = data.longitude;
+                const timestamp = new Date(data.timestamp).toLocaleString();
+
+                // Menampilkan data di halaman
+                document.getElementById('location').innerText = `Latitude: ${latitude}, Longitude: ${longitude}`;
+                document.getElementById('timestamp').innerText = `Last Updated: ${timestamp}`;
+            }
+        });
     </script>
 </head>
 <body>
     <h1>Sistem Monitor</h1>
     <p id="location">Menunggu lokasi...</p>
+    <p id="timestamp"></p>
 </body>
 </html>
