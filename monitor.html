@@ -52,21 +52,20 @@
             }));
 
             // Tambahkan marker lokasi pengguna
-            new ol.Overlay({
+            const marker = new ol.Overlay({
+                position: ol.proj.fromLonLat([lon, lat]),
                 element: document.createElement('div'),
                 positioning: 'bottom-center',
                 stopEvent: false
-            }).setPosition(ol.proj.fromLonLat([lon, lat]));
+            });
 
-            const markerElement = document.createElement('div');
-            markerElement.className = 'marker';
-            markerElement.style.backgroundColor = 'red';
-            markerElement.style.width = '10px';
-            markerElement.style.height = '10px';
-            markerElement.style.borderRadius = '50%';
-            markerElement.style.position = 'absolute';
-            markerElement.style.transform = 'translate(-50%, -50%)';
-            document.body.appendChild(markerElement);
+            marker.getElement().className = 'marker';
+            marker.getElement().style.backgroundColor = 'red';
+            marker.getElement().style.width = '10px';
+            marker.getElement().style.height = '10px';
+            marker.getElement().style.borderRadius = '50%';
+
+            map.addOverlay(marker);
         }
 
         function showError(error) {
