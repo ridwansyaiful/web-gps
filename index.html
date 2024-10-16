@@ -44,28 +44,26 @@
                 latitude: lat,
                 longitude: lon,
                 timestamp: Date.now()
+            }).then(() => {
+                console.log("Data lokasi berhasil dikirim ke Firebase");
+            }).catch((error) => {
+                console.error("Gagal mengirim data ke Firebase:", error);
             });
-
-            // Menghapus pesan penolakan izin (jika ada)
-            database.ref('notifications/device1').remove();
         }
 
         function showError(error) {
-            const notificationRef = database.ref('notifications/device1');
             switch (error.code) {
                 case error.PERMISSION_DENIED:
-                    notificationRef.set({
-                        message: "Target tidak izinkan lokasi"
-                    });
+                    alert("Anda tidak mengizinkan lokasi.");
                     break;
                 case error.POSITION_UNAVAILABLE:
-                    alert("Location information is unavailable.");
+                    alert("Informasi lokasi tidak tersedia.");
                     break;
                 case error.TIMEOUT:
-                    alert("The request to get user location timed out.");
+                    alert("Waktu permintaan lokasi habis.");
                     break;
                 case error.UNKNOWN_ERROR:
-                    alert("An unknown error occurred.");
+                    alert("Terjadi kesalahan yang tidak diketahui.");
                     break;
             }
         }
