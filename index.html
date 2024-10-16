@@ -3,105 +3,92 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Monitoring</title>
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <title>Sistem Target</title>
+    <script src="https://www.gstatic.com/firebasejs/9.16.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.16.0/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.16.0/firebase-messaging.js"></script>
     <style>
-        /* Atur tinggi peta */
-        #map {
-            height: 400px; /* Atur tinggi peta */
-            width: 100%; /* Lebar penuh */
+        body {
+            font-family: Arial, sans-serif;
         }
     </style>
-    <script type="module">
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-app.js';
-        import { getMessaging, getToken, onMessage } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-messaging.js';
-
+</head>
+<body>
+    <h1>Sistem Target</h1>
+    <p>Lokasi Anda saat ini akan dikirim ke sistem monitor.</p>
+    
+    <script>
         // Konfigurasi Firebase Anda
         const firebaseConfig = {
             apiKey: "AIzaSyDgPYGXqbBXt1NayhNB5M-8mjXfGKrOzWM",
             authDomain: "coba-accf3.firebaseapp.com",
-            databaseURL: "https://coba-accf3-default-rtdb.asia-southeast1.firebasedatabase.app/",
             projectId: "coba-accf3",
             storageBucket: "coba-accf3.appspot.com",
             messagingSenderId: "171764982868",
-            appId: "1:171764982868:web:19c716f6617667514679c1"
+            appId: "1:171764982868:web:19c716f6617667514679c1",
+            databaseURL: "https://coba-accf3-default-rtdb.asia-southeast1.firebasedatabase.app/"
         };
 
         // Inisialisasi Firebase
-        const app = initializeApp(firebaseConfig);
-        const messaging = getMessaging(app);
+        const app = firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        const messaging = firebase.messaging();
 
-        // Meminta izin untuk mengirim notifikasi
-        Notification.requestPermission().then((permission) => {
-            if (permission === 'granted') {
-                console.log('Notification permission granted.');
-                // Mendapatkan token FCM
-                getToken(messaging, { vapidKey: 'YOUR_PUBLIC_VAPID_KEY' }).then((currentToken) => {
-                    if (currentToken) {
-                        console.log('FCM Token:', currentToken);
-                        // Kirim token ke server Anda untuk disimpan
-                    } else {
-                        console.log('No registration token available. Request permission to generate one.');
-                    }
-                }).catch((err) => {
-                    console.log('An error occurred while retrieving token. ', err);
-                });
-            } else {
-                console.log('Unable to get permission to notify.');
-            }
-        });
-
-        // Menangani notifikasi yang diterima saat aplikasi aktif
-        onMessage(messaging, (payload) => {
-            console.log('Message received. ', payload);
-            // Tampilkan notifikasi
-            const notificationTitle = payload.notification.title;
-            const notificationOptions = {
-                body: payload.notification.body,
-                icon: '/icon-192x192.png' // Ganti dengan ikon yang sesuai
-            };
-            new Notification(notificationTitle, notificationOptions);
-        });
-
-        // Inisialisasi peta
-        const map = L.map('map').setView([-6.2001, 106.8456], 13); // Koordinat awal
-
-        // Menambahkan layer peta dari OpenStreetMap
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19,
-        }).addTo(map);
-
-        // Fungsi untuk menampilkan lokasi
-        function updateMap(lat, lon) {
-            // Menghapus marker lama jika ada
-            if (window.marker) {
-                map.removeLayer(window.marker);
-            }
-            // Tambahkan marker ke peta
-            window.marker = L.marker([lat, lon]).addTo(map);
-            map.setView([lat, lon], 15); // Pindahkan peta ke lokasi baru dan zoom level 15
-        }
-
-        // Fungsi untuk mendapatkan data dari Firebase
-        function getLocationFromFirebase() {
-            const locationRef = ref(database, 'devices/device1'); // ID perangkat unik
-            onValue(locationRef, (snapshot) => {
-                const data = snapshot.val();
-                if (data) {
-                    updateMap(data.latitude, data.longitude);
-                }
+        // Fungsi untuk mengirim lokasi ke Firebase
+        function sendLocation(latitude, longitude) {
+            const locationRef = database.ref('devices/device1');
+            locationRef.set({ latitude, longitude }).then(() => {
+                console.log("Lokasi berhasil dikirim:", { latitude, longitude });
+                sendNotification("Lokasi diperbarui", `Lat: ${latitude}, Lon: ${longitude}`);
             });
         }
 
-        // Mulai mendapatkan data lokasi dari Firebase saat halaman dimuat
-        window.onload = getLocationFromFirebase;
+        // Fungsi untuk mengirim notifikasi
+        function sendNotification(title, body) {
+            const payload = {
+                notification: {
+                    title: title,
+                    body: body,
+                    icon: 'icon-192x192.png'
+                }
+            };
+            // Kirim notifikasi ke sistem monitor
+            fetch('https://fcm.googleapis.com/fcm/send', {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'key=YOUR_SERVER_KEY', // Ganti dengan server key Anda
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    to: '/topics/monitor', // Kirim ke topic monitor
+                    notification: {
+                        title: title,
+                        body: body
+                    }
+                })
+            }).then(response => response.json())
+              .then(data => console.log("Notifikasi terkirim:", data))
+              .catch(error => console.error("Error mengirim notifikasi:", error));
+        }
+
+        // Simulasi mengirim lokasi (contoh)
+        // Anda bisa mengganti ini dengan GPS atau cara lain untuk mendapatkan lokasi
+        sendLocation(-6.2001, 106.8456); // Ganti dengan lokasi yang sesuai
+
+        // Minta izin untuk notifikasi
+        messaging.requestPermission()
+            .then(() => {
+                console.log("Izin notifikasi diberikan.");
+                return messaging.getToken();
+            })
+            .then((token) => {
+                console.log("Token FCM:", token);
+                // Kirim token ke server Anda untuk disimpan
+                // Anda bisa menambahkan kode untuk mengirim token ke server
+            })
+            .catch((err) => {
+                console.error("Izin notifikasi ditolak:", err);
+            });
     </script>
-</head>
-<body>
-    <h1>Sistem Monitoring</h1>
-    <div id="map"></div> <!-- Elemen untuk peta -->
 </body>
 </html>
