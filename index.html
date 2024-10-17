@@ -84,10 +84,10 @@
 
         // Lokasi default yang ditampilkan di peta (koordinat di sekitar Bantul, Yogyakarta)
         const defaultLocations = [
-            { name: "lokasi a", coordinates: "-7.975187, 110.333603" }, // Lokasi A
-            { name: "lokasi b", coordinates: "-7.975211, 110.333730" }, // Lokasi B
-            { name: "lokasi c", coordinates: "-7.975407, 110.333622" }, // Lokasi C
-            { name: "lokasi d", coordinates: "-7.975431, 110.333736" }  // Lokasi D
+            { name: "lokasi a", lat: -7.975187, lon: 110.333603 }, // Lokasi A
+            { name: "lokasi b", lat: -7.975211, lon: 110.333730 }, // Lokasi B
+            { name: "lokasi c", lat: -7.975407, lon: 110.333622 }, // Lokasi C
+            { name: "lokasi d", lat: -7.975431, lon: 110.333736 }  // Lokasi D
         ];
 
         // Inisialisasi peta dengan zoom level 15
@@ -114,40 +114,26 @@
 
         // Menambahkan marker untuk lokasi default
         defaultLocations.forEach(location => {
-            const latLon = location.coordinates.split(','); // Memisahkan lat dan lon
-            const lat = parseFloat(latLon[0].trim()); // Koordinat latitude
-            const lon = parseFloat(latLon[1].trim()); // Koordinat longitude
-
-            // Cek jika lat atau lon adalah NaN
-            if (isNaN(lat) || isNaN(lon)) {
-                console.error(`Invalid coordinates for ${location.name}: lat=${lat}, lon=${lon}`);
-                return; // Lewati jika koordinat tidak valid
-            }
-
-            // Menambahkan marker ke peta
-            const marker = L.marker([lat, lon], { icon: homeIcon })
+            const marker = L.marker([location.lat, location.lon], { icon: homeIcon })
                 .addTo(map)
                 .bindPopup(location.name); // Popup menampilkan nama lokasi
         });
 
-        // Fungsi untuk menampilkan lokasi dari Firebase
+        // Fungsi untuk menampilkan lokasi dari Firebase (lokasi pengguna)
         function updateMap(lat, lon) {
             // Menghapus marker lama jika ada
-            if (window.marker) {
-                map.removeLayer(window.marker);
+            if (window.userMarker) {
+                map.removeLayer(window.userMarker);
             }
-            // Tambahkan marker ke peta dan pertahankan zoom level yang ada
-            window.marker = L.marker([lat, lon]).addTo(map);
+            // Tambahkan marker pengguna ke peta dan pertahankan zoom level yang ada
+            window.userMarker = L.marker([lat, lon]).addTo(map);
             map.setView([lat, lon], currentZoom); // Tetap pertahankan zoom level
         }
 
-        // Fungsi untuk mendapatkan data dari Firebase (tanpa menampilkan device lain)
+        // Fungsi untuk mendapatkan data dari Firebase (hanya untuk device1)
         function getLocationFromFirebase() {
-            // Menghapus data lama dari Firebase ketika halaman dimuat
-            const locationRef = ref(database, 'devices/device1');
-            remove(locationRef);
-
             // Mengambil data lokasi dari Firebase hanya untuk device1
+            const locationRef = ref(database, 'devices/device1');
             onValue(locationRef, (snapshot) => {
                 const data = snapshot.val();
                 if (data) {
