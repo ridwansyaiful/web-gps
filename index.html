@@ -141,14 +141,18 @@
 
         // Fungsi untuk menampilkan lokasi dari Firebase (lokasi pengguna)
         function updateMap(lat, lon) {
-            // Menghapus marker lama jika ada
+        // Menghapus marker lama jika ada
             if (window.userMarker) {
                 map.removeLayer(window.userMarker);
             }
             // Tambahkan marker pengguna ke peta
             window.userMarker = L.marker([lat, lon]).addTo(map);
-            map.setView([lat, lon], map.getZoom()); // Tetap pertahankan zoom level
+            
+            // Set zoom level yang diinginkan, misalnya 15 untuk lebih mendetail
+            const zoomLevel = 15; // Anda bisa mengatur zoom level ini sesuai kebutuhan
+            map.setView([lat, lon], zoomLevel); // Tetap pertahankan zoom level
         }
+
 
         // Fungsi untuk mendapatkan data dari Firebase (hanya untuk device ID unik)
         function getLocationFromFirebase() {
