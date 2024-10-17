@@ -82,17 +82,16 @@
             }
         }
 
-        // Lokasi default yang ditampilkan di peta
+        // Lokasi default yang ditampilkan di peta (diubah)
         const defaultLocations = [
-            { lat: -6.2101, lon: 106.8456 }, // Lokasi 1
-            { lat: -6.2151, lon: 106.8436 }, // Lokasi 2
-            { lat: -6.2051, lon: 106.8476 }, // Lokasi 3
-            { lat: -6.2021, lon: 106.8486 }, // Lokasi 4
-            { lat: -6.2081, lon: 106.8446 }  // Lokasi 5
+            "lokasi a -7.975187635409397, 110.3336031607586", // Lokasi A
+            "lokasi b -7.975211760933644, 110.33373015172289", // Lokasi B
+            "lokasi c -7.975407255384273, 110.33362237026992", // Lokasi C
+            "lokasi d -7.975431736476392, 110.33373560469036"  // Lokasi D
         ];
 
         // Inisialisasi peta
-        const map = L.map('map').setView([-6.2001, 106.8456], 13); // Koordinat awal
+        const map = L.map('map').setView([-7.9753, 110.3336], 15); // Koordinat awal
 
         // Menambahkan layer peta dari OpenStreetMap
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -107,10 +106,15 @@
             popupAnchor: [0, -30] // Titik jangkar popup
         });
 
-        defaultLocations.forEach(location => {
-            L.marker([location.lat, location.lon], { icon: homeIcon })
+        defaultLocations.forEach(locationString => {
+            const parts = locationString.split(' ');
+            const locName = parts[0]; // Nama lokasi
+            const lat = parseFloat(parts[1]); // Koordinat latitude
+            const lon = parseFloat(parts[2]); // Koordinat longitude
+
+            L.marker([lat, lon], { icon: homeIcon })
                 .addTo(map)
-                .bindPopup('Lokasi Default');
+                .bindPopup(locName); // Popup menampilkan nama lokasi
         });
 
         // Fungsi untuk menampilkan lokasi dari Firebase
