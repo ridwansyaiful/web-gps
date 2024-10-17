@@ -4,6 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistem Lapor</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <style>
+        #map {
+            height: 400px;
+            width: 100%;
+        }
+    </style>
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-app.js';
         import { getDatabase, ref, set, onDisconnect } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-database.js';
@@ -20,6 +28,9 @@
 
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
+
+        let map;
+        let marker;
 
         // Fungsi untuk mendapatkan atau membuat deviceId
         function getDeviceId() {
@@ -59,6 +70,20 @@
 
             // Menghapus data ketika perangkat keluar
             onDisconnect(locationRef).remove();
+
+            // Update posisi di peta
+            if (!map) {
+                map = L.map('map').setView([lat, lon], 13);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19,
+                }).addTo(map);
+            }
+
+            if (marker) {
+                map.removeLayer(marker);
+            }
+            marker = L.marker([lat, lon]).addTo(map);
+            map.setView([lat, lon], 15);
         }
 
         function showError(error) {
@@ -84,5 +109,6 @@
 <body>
     <h1>Sistem Lapor</h1>
     <p>Proses Development...</p>
+    <div id="map"></div> <!-- Tambahkan peta di halaman sistem lapor -->
 </body>
 </html>
