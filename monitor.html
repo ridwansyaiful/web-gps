@@ -42,7 +42,7 @@
             maxZoom: 19,
         }).addTo(map);
 
-        const markers = {}; // Simpan marker untuk setiap perangkat
+        let markers = {}; // Mengganti const menjadi let
 
         function updateMap(deviceId, lat, lon) {
             // Jika marker sudah ada, perbarui posisi
