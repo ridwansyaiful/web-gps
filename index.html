@@ -108,7 +108,7 @@
 
         // Menambahkan marker untuk lokasi default
         defaultLocations.forEach(locationString => {
-            const parts = locationString.split(' ');
+            const parts = locationString.split(' '); // Memisahkan nama lokasi dan koordinat
             const locName = parts[0]; // Nama lokasi
             const latLon = parts[1].split(','); // Memisahkan lat dan lon
             const lat = parseFloat(latLon[0]); // Koordinat latitude
