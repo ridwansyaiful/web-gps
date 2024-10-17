@@ -32,7 +32,7 @@
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
 
-        // Fungsi untuk mendapatkan lokasi pengguna
+        // Fungsi untuk mendapatkan lokasi
         function getLocation() {
             console.log("Meminta lokasi...");
             if (navigator.geolocation) {
@@ -82,35 +82,43 @@
             }
         }
 
-        // Lokasi default yang ditampilkan di peta (diubah)
+        // Lokasi default yang ditampilkan di peta
         const defaultLocations = [
-            "lokasi a -7.975187635409397, 110.3336031607586", // Lokasi A
-            "lokasi b -7.975211760933644, 110.33373015172289", // Lokasi B
-            "lokasi c -7.975407255384273, 110.33362237026992", // Lokasi C
-            "lokasi d -7.975431736476392, 110.33373560469036"  // Lokasi D
+            "lokasi a -7.975187635409397, 110.3336031607586", 
+            "lokasi b -7.975211760933644, 110.33373015172289",
+            "lokasi c -7.975407255384273, 110.33362237026992", 
+            "lokasi d -7.975431736476392, 110.33373560469036"
         ];
 
         // Inisialisasi peta
-        const map = L.map('map').setView([-7.9753, 110.3336], 15); // Koordinat awal
+        const map = L.map('map').setView([-7.9752, 110.3337], 15); // Koordinat awal
 
         // Menambahkan layer peta dari OpenStreetMap
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
         }).addTo(map);
 
-        // Menambahkan marker untuk lokasi default dengan ikon rumah dari Flaticon
+        // Menambahkan ikon rumah
         const homeIcon = L.icon({
-            iconUrl: 'https://cdn-icons-png.flaticon.com/512/9187/9187555.png', // URL ikon rumah dari Flaticon
-            iconSize: [30, 30], // Ukuran ikon
-            iconAnchor: [15, 30], // Titik jangkar ikon
-            popupAnchor: [0, -30] // Titik jangkar popup
+            iconUrl: 'https://cdn-icons-png.flaticon.com/512/9187/9187555.png', // URL ikon rumah
+            iconSize: [25, 25], // Ukuran ikon
+            iconAnchor: [12, 25], // Titik jangkar ikon
+            popupAnchor: [0, -25] // Titik jangkar popup
         });
 
+        // Menambahkan marker untuk lokasi default
         defaultLocations.forEach(locationString => {
             const parts = locationString.split(' ');
             const locName = parts[0]; // Nama lokasi
-            const lat = parseFloat(parts[1]); // Koordinat latitude
-            const lon = parseFloat(parts[2]); // Koordinat longitude
+            const latLon = parts[1].split(','); // Memisahkan lat dan lon
+            const lat = parseFloat(latLon[0]); // Koordinat latitude
+            const lon = parseFloat(latLon[1]); // Koordinat longitude
+
+            // Cek jika lat atau lon adalah NaN
+            if (isNaN(lat) || isNaN(lon)) {
+                console.error(`Invalid coordinates for ${locationString}: lat=${lat}, lon=${lon}`);
+                return; // Lewati jika koordinat tidak valid
+            }
 
             // Menambahkan marker ke peta
             L.marker([lat, lon], { icon: homeIcon })
@@ -155,7 +163,7 @@
     </script>
 </head>
 <body>
-    <h1>Sistem Lapor</h1> <!-- Judul diubah menjadi "Sistem Lapor" -->
+    <h1>Sistem Lapor</h1>
     <div id="map"></div> <!-- Elemen untuk peta -->
 </body>
 </html>
