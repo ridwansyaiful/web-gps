@@ -17,7 +17,7 @@
     </style>
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-app.js';
-        import { getDatabase, ref, onValue } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-database.js';
+        import { getDatabase, ref, onValue, set, remove } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-database.js';
 
         // Konfigurasi Firebase Anda
         const firebaseConfig = {
@@ -43,8 +43,9 @@
         }).addTo(map);
 
         let markers = {}; // Mengganti const menjadi let
+        const deviceId = "device_" + Math.random().toString(36).substring(2, 15); // Buat ID perangkat unik
 
-        function updateMap(deviceId, lat, lon) {
+        function updateMap(lat, lon) {
             // Jika marker sudah ada, perbarui posisi
             if (markers[deviceId]) {
                 markers[deviceId].setLatLng([lat, lon]);
@@ -67,15 +68,38 @@
                 snapshot.forEach((childSnapshot) => {
                     const data = childSnapshot.val();
                     if (data) {
-                        const deviceId = childSnapshot.key; // Ambil ID perangkat
-                        updateMap(deviceId, data.latitude, data.longitude);
+                        updateMap(data.latitude, data.longitude);
                     }
                 });
             });
         }
 
+        // Menyimpan lokasi perangkat ke Firebase
+        function saveLocation(lat, lon) {
+            set(ref(database, 'devices/' + deviceId), {
+                latitude: lat,
+                longitude: lon
+            });
+        }
+
+        // Menghapus lokasi perangkat dari Firebase saat halaman ditutup
+        function removeLocation() {
+            remove(ref(database, 'devices/' + deviceId));
+        }
+
         // Mulai mendapatkan data lokasi dari Firebase saat halaman dimuat
-        window.onload = getLocationFromFirebase;
+        window.onload = function() {
+            navigator.geolocation.getCurrentPosition((position) => {
+                const lat = position.coords.latitude;
+                const lon = position.coords.longitude;
+                saveLocation(lat, lon);
+                updateMap(lat, lon);
+                getLocationFromFirebase();
+            });
+        };
+
+        // Hapus lokasi perangkat saat halaman ditutup
+        window.onbeforeunload = removeLocation;
     </script>
 </head>
 <body>
