@@ -15,7 +15,7 @@
     </style>
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-app.js';
-        import { getDatabase, ref, set, remove, onValue } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-database.js';
+        import { getDatabase, ref, set, remove, onValue, get, child } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-database.js';
 
         // Konfigurasi Firebase Anda
         const firebaseConfig = {
@@ -31,6 +31,8 @@
         // Inisialisasi Firebase
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
+
+        let deviceID = 'device1'; // Nama perangkat awal
 
         // Fungsi untuk mendapatkan lokasi
         function getLocation() {
@@ -49,7 +51,7 @@
             const lon = position.coords.longitude;
 
             // Mengirim data lokasi ke Firebase
-            const locationRef = ref(database, 'devices/device1'); // ID perangkat unik
+            const locationRef = ref(database, `devices/${deviceID}`);
             set(locationRef, {
                 latitude: lat,
                 longitude: lon,
@@ -57,12 +59,12 @@
             });
 
             // Menghapus pesan penolakan izin (jika ada)
-            const notificationRef = ref(database, 'notifications/device1'); // ID perangkat unik
+            const notificationRef = ref(database, `notifications/${deviceID}`);
             remove(notificationRef);
         }
 
         function showError(error) {
-            const notificationRef = ref(database, 'notifications/device1'); // ID perangkat unik
+            const notificationRef = ref(database, `notifications/${deviceID}`);
             console.log("Error mendapatkan lokasi:", error); // Log kesalahan untuk debug
             switch (error.code) {
                 case error.PERMISSION_DENIED:
@@ -82,12 +84,28 @@
             }
         }
 
-        // Lokasi default yang ditampilkan di peta (koordinat di sekitar Bantul, Yogyakarta)
+        // Fungsi untuk mencari ID perangkat unik yang tersedia
+        async function findAvailableDeviceID() {
+            let i = 1;
+            let found = false;
+            while (!found) {
+                const deviceRef = ref(database, `devices/device${i}`);
+                const snapshot = await get(deviceRef);
+                if (!snapshot.exists()) {
+                    deviceID = `device${i}`;
+                    found = true;
+                }
+                i++;
+            }
+            console.log("ID Perangkat yang dipakai:", deviceID);
+        }
+
+        // Lokasi default yang ditampilkan di peta
         const defaultLocations = [
-            { name: "lokasi a", lat: -7.975187, lon: 110.333603 }, // Lokasi A
-            { name: "lokasi b", lat: -7.975211, lon: 110.333730 }, // Lokasi B
-            { name: "lokasi c", lat: -7.975407, lon: 110.333622 }, // Lokasi C
-            { name: "lokasi d", lat: -7.975431, lon: 110.333736 }  // Lokasi D
+            { name: "lokasi a", coordinates: "-7.975187, 110.333603" }, // Lokasi A
+            { name: "lokasi b", coordinates: "-7.975211, 110.333730" }, // Lokasi B
+            { name: "lokasi c", coordinates: "-7.975407, 110.333622" }, // Lokasi C
+            { name: "lokasi d", coordinates: "-7.975431, 110.333736" }  // Lokasi D
         ];
 
         // Inisialisasi peta dengan zoom level 15
@@ -114,7 +132,8 @@
 
         // Menambahkan marker untuk lokasi default
         defaultLocations.forEach(location => {
-            const marker = L.marker([location.lat, location.lon], { icon: homeIcon })
+            const [lat, lon] = location.coordinates.split(',').map(coord => parseFloat(coord.trim())); // Pisahkan koordinat string menjadi lat dan lon
+            const marker = L.marker([lat, lon], { icon: homeIcon })
                 .addTo(map)
                 .bindPopup(location.name); // Popup menampilkan nama lokasi
         });
@@ -130,10 +149,10 @@
             map.setView([lat, lon], currentZoom); // Tetap pertahankan zoom level
         }
 
-        // Fungsi untuk mendapatkan data dari Firebase (hanya untuk device1)
+        // Fungsi untuk mendapatkan data dari Firebase (hanya untuk device ID unik)
         function getLocationFromFirebase() {
-            // Mengambil data lokasi dari Firebase hanya untuk device1
-            const locationRef = ref(database, 'devices/device1');
+            // Mengambil data lokasi dari Firebase untuk device yang unik
+            const locationRef = ref(database, `devices/${deviceID}`);
             onValue(locationRef, (snapshot) => {
                 const data = snapshot.val();
                 if (data) {
@@ -143,7 +162,8 @@
         }
 
         // Mulai mendapatkan lokasi saat halaman dimuat
-        window.onload = () => {
+        window.onload = async () => {
+            await findAvailableDeviceID(); // Cari ID perangkat unik
             getLocation();
             getLocationFromFirebase();
         };
