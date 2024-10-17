@@ -84,10 +84,10 @@
 
         // Lokasi default yang ditampilkan di peta (koordinat di sekitar Bantul, Yogyakarta)
         const defaultLocations = [
-            "lokasi a -7.975187, 110.333603", // Lokasi A
-            "lokasi b -7.975211, 110.333730", // Lokasi B
-            "lokasi c -7.975407, 110.333622", // Lokasi C
-            "lokasi d -7.975431, 110.333736"  // Lokasi D
+            { name: "lokasi a", coordinates: "-7.975187, 110.333603" }, // Lokasi A
+            { name: "lokasi b", coordinates: "-7.975211, 110.333730" }, // Lokasi B
+            { name: "lokasi c", coordinates: "-7.975407, 110.333622" }, // Lokasi C
+            { name: "lokasi d", coordinates: "-7.975431, 110.333736" }  // Lokasi D
         ];
 
         // Inisialisasi peta
@@ -107,25 +107,21 @@
         });
 
         // Menambahkan marker untuk lokasi default
-        defaultLocations.forEach(locationString => {
-            const parts = locationString.split(' '); // Memisahkan nama lokasi dan koordinat
-            const locName = parts[0]; // Nama lokasi
-            const latLon = parts[1].split(','); // Memisahkan lat dan lon
-            
-            // Mengambil nilai latitude dan longitude dengan parsing yang baik
-            const lat = parseFloat(latLon[0]); // Koordinat latitude
-            const lon = parseFloat(latLon[1]); // Koordinat longitude
+        defaultLocations.forEach(location => {
+            const latLon = location.coordinates.split(','); // Memisahkan lat dan lon
+            const lat = parseFloat(latLon[0].trim()); // Koordinat latitude
+            const lon = parseFloat(latLon[1].trim()); // Koordinat longitude
 
             // Cek jika lat atau lon adalah NaN
             if (isNaN(lat) || isNaN(lon)) {
-                console.error(`Invalid coordinates for ${locationString}: lat=${lat}, lon=${lon}`);
+                console.error(`Invalid coordinates for ${location.name}: lat=${lat}, lon=${lon}`);
                 return; // Lewati jika koordinat tidak valid
             }
 
             // Menambahkan marker ke peta
             const marker = L.marker([lat, lon], { icon: homeIcon })
                 .addTo(map)
-                .bindPopup(locName); // Popup menampilkan nama lokasi
+                .bindPopup(location.name); // Popup menampilkan nama lokasi
         });
 
         // Fungsi untuk menampilkan lokasi dari Firebase
