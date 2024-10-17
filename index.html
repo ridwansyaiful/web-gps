@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Lapor dan Monitoring</title>
+    <title>Sistem Lapor</title> <!-- Judul diubah menjadi "Sistem Lapor" -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <style>
@@ -32,7 +32,7 @@
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
 
-        // Fungsi untuk mendapatkan lokasi
+        // Fungsi untuk mendapatkan lokasi pengguna
         function getLocation() {
             console.log("Meminta lokasi...");
             if (navigator.geolocation) {
@@ -99,12 +99,12 @@
             maxZoom: 19,
         }).addTo(map);
 
-        // Menambahkan marker untuk lokasi default dengan ikon rumah
+        // Menambahkan marker untuk lokasi default dengan ikon rumah dari Flaticon
         const homeIcon = L.icon({
-            iconUrl: 'https://cdn-icons-png.flaticon.com/512/1946/1946450.png', // URL ikon rumah
-            iconSize: [25, 25], // Ukuran ikon
-            iconAnchor: [12, 25], // Titik jangkar ikon
-            popupAnchor: [0, -25] // Titik jangkar popup
+            iconUrl: 'https://cdn-icons-png.flaticon.com/512/9187/9187555.png', // URL ikon rumah dari Flaticon
+            iconSize: [30, 30], // Ukuran ikon
+            iconAnchor: [15, 30], // Titik jangkar ikon
+            popupAnchor: [0, -30] // Titik jangkar popup
         });
 
         defaultLocations.forEach(location => {
@@ -150,7 +150,7 @@
     </script>
 </head>
 <body>
-    <h1>Sistem Lapor dan Monitoring</h1>
+    <h1>Sistem Lapor</h1> <!-- Judul diubah menjadi "Sistem Lapor" -->
     <div id="map"></div> <!-- Elemen untuk peta -->
 </body>
 </html>
