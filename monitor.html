@@ -4,12 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistem Monitoring</title>
+    <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <style>
+        /* Atur tinggi peta */
         #map {
-            height: 400px;
-            width: 100%;
+            height: 400px; /* Atur tinggi peta */
+            width: 100%; /* Lebar penuh */
         }
     </style>
     <script type="module">
@@ -32,31 +35,34 @@
         const database = getDatabase(app);
 
         // Inisialisasi peta
-        const map = L.map('map').setView([-6.2001, 106.8456], 13);
+        const map = L.map('map').setView([-6.2001, 106.8456], 13); // Koordinat awal
 
+        // Menambahkan layer peta dari OpenStreetMap
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
         }).addTo(map);
 
         // Fungsi untuk menampilkan lokasi
         function updateMap(lat, lon) {
+            // Menghapus marker lama jika ada
             if (window.marker) {
                 map.removeLayer(window.marker);
             }
+            // Tambahkan marker ke peta
             window.marker = L.marker([lat, lon]).addTo(map);
-            map.setView([lat, lon], 15);
+            map.setView([lat, lon], 15); // Pindahkan peta ke lokasi baru dan zoom level 15
         }
 
         // Fungsi untuk mendapatkan data dari Firebase
         function getLocationFromFirebase() {
-            // Ganti 'device1' dengan ID perangkat yang ingin dipantau
-            const deviceId = prompt("Masukkan ID perangkat unik yang ingin dipantau:");
-            const locationRef = ref(database, `devices/${deviceId}`);
+            const locationRef = ref(database, 'devices'); // Mengambil semua perangkat
             onValue(locationRef, (snapshot) => {
-                const data = snapshot.val();
-                if (data) {
-                    updateMap(data.latitude, data.longitude);
-                }
+                snapshot.forEach((childSnapshot) => {
+                    const data = childSnapshot.val();
+                    if (data) {
+                        updateMap(data.latitude, data.longitude);
+                    }
+                });
             });
         }
 
@@ -66,6 +72,6 @@
 </head>
 <body>
     <h1>Sistem Monitoring</h1>
-    <div id="map"></div>
+    <div id="map"></div> <!-- Elemen untuk peta -->
 </body>
 </html>
