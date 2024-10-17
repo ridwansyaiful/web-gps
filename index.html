@@ -90,8 +90,14 @@
             { name: "lokasi d", coordinates: "-7.975431, 110.333736" }  // Lokasi D
         ];
 
-        // Inisialisasi peta
-        const map = L.map('map').setView([-7.975187, 110.333603], 15); // Koordinat awal di sekitar Bantul
+        // Inisialisasi peta dengan zoom level 15
+        let currentZoom = 15; // Variabel untuk menyimpan zoom level
+        const map = L.map('map').setView([-7.975187, 110.333603], currentZoom); // Koordinat awal di sekitar Bantul
+
+        // Menyimpan zoom level saat diubah
+        map.on('zoomend', function() {
+            currentZoom = map.getZoom(); // Simpan level zoom saat ini
+        });
 
         // Menambahkan layer peta dari OpenStreetMap
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -130,25 +136,22 @@
             if (window.marker) {
                 map.removeLayer(window.marker);
             }
-            // Tambahkan marker ke peta
+            // Tambahkan marker ke peta dan pertahankan zoom level yang ada
             window.marker = L.marker([lat, lon]).addTo(map);
-            map.setView([lat, lon], 15); // Pindahkan peta ke lokasi baru dan zoom level 15
+            map.setView([lat, lon], currentZoom); // Tetap pertahankan zoom level
         }
 
-        // Fungsi untuk mendapatkan data dari Firebase
+        // Fungsi untuk mendapatkan data dari Firebase (tanpa menampilkan device lain)
         function getLocationFromFirebase() {
-            // Menghapus semua data lokasi dari Firebase ketika halaman dimuat
-            const locationRef = ref(database, 'devices');
+            // Menghapus data lama dari Firebase ketika halaman dimuat
+            const locationRef = ref(database, 'devices/device1');
             remove(locationRef);
 
-            // Mengambil data lokasi dari Firebase
-            const devicesRef = ref(database, 'devices'); // Referensi ke semua perangkat
-            onValue(devicesRef, (snapshot) => {
+            // Mengambil data lokasi dari Firebase hanya untuk device1
+            onValue(locationRef, (snapshot) => {
                 const data = snapshot.val();
                 if (data) {
-                    for (const deviceId in data) {
-                        updateMap(data[deviceId].latitude, data[deviceId].longitude);
-                    }
+                    updateMap(data.latitude, data.longitude);
                 }
             });
         }
