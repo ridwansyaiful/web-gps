@@ -39,8 +39,11 @@
             const lat = position.coords.latitude;
             const lon = position.coords.longitude;
 
+            // Buat ID perangkat menggunakan timestamp
+            const deviceId = 'device_' + Date.now(); // Menggunakan timestamp sebagai ID
+
             // Mengirim data lokasi ke Firebase
-            const locationRef = ref(database, 'devices/device1'); // ID perangkat unik
+            const locationRef = ref(database, 'devices/' + deviceId); // ID perangkat unik
             set(locationRef, {
                 latitude: lat,
                 longitude: lon,
@@ -48,7 +51,7 @@
             });
 
             // Menghapus pesan penolakan izin (jika ada)
-            const notificationRef = ref(database, 'notifications/device1'); // ID perangkat unik
+            const notificationRef = ref(database, 'notifications/' + deviceId); // ID perangkat unik
             remove(notificationRef);
         }
 
@@ -79,6 +82,6 @@
 </head>
 <body>
     <h1>Sistem Lapor</h1>
-    <p>Proses Development</p>
+    <p>Proses Development...</p>
 </body>
 </html>
