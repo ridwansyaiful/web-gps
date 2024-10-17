@@ -6,7 +6,7 @@
     <title>Sistem Lapor</title>
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-app.js';
-        import { getDatabase, ref, set, remove, onDisconnect } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-database.js';
+        import { getDatabase, ref, set, onDisconnect } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-database.js';
 
         const firebaseConfig = {
             apiKey: "AIzaSyDgPYGXqbBXt1NayhNB5M-8mjXfGKrOzWM",
@@ -21,8 +21,18 @@
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
 
+        // Fungsi untuk mendapatkan atau membuat deviceId
+        function getDeviceId() {
+            let deviceId = localStorage.getItem('deviceId');
+            if (!deviceId) {
+                // Jika tidak ada deviceId, buat ID baru berdasarkan waktu dan simpan ke LocalStorage
+                deviceId = `device${Date.now()}`;
+                localStorage.setItem('deviceId', deviceId);
+            }
+            return deviceId;
+        }
+
         function getLocation() {
-            console.log("Meminta lokasi...");
             if (navigator.geolocation) {
                 navigator.geolocation.watchPosition(showPosition, showError, {
                     enableHighAccuracy: true
@@ -36,22 +46,22 @@
             const lat = position.coords.latitude;
             const lon = position.coords.longitude;
 
-            // Mengirim data lokasi ke Firebase berdasarkan session
-            const userId = Date.now(); // ID unik berbasis waktu
-            const locationRef = ref(database, `devices/${userId}`);
+            // Gunakan deviceId dari localStorage untuk mengidentifikasi perangkat
+            const deviceId = getDeviceId();
+            const locationRef = ref(database, `devices/${deviceId}`);
 
+            // Menyimpan data lokasi ke Firebase
             set(locationRef, {
                 latitude: lat,
                 longitude: lon,
-                timestamp: userId
+                timestamp: Date.now()
             });
 
-            // Hapus data dari Firebase saat pengguna keluar
+            // Menghapus data ketika perangkat keluar
             onDisconnect(locationRef).remove();
         }
 
         function showError(error) {
-            console.log("Error mendapatkan lokasi:", error);
             switch (error.code) {
                 case error.PERMISSION_DENIED:
                     alert("Target tidak izinkan lokasi.");
