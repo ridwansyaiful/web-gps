@@ -109,6 +109,14 @@
             { name: "lokasi d", coordinates: "-7.975760, 110.334861" }  // Lokasi D (sudut 4)
         ];
 
+        // Lokasi tambahan di dalam area geofencing (untuk ikon rumah)
+        const additionalLocations = [
+            { name: "Rumah 1", coordinates: "-7.975000, 110.334000" },
+            { name: "Rumah 2", coordinates: "-7.976000, 110.331500" },
+            { name: "Rumah 3", coordinates: "-7.975500, 110.333000" },
+            { name: "Rumah 4", coordinates: "-7.976500, 110.335000" }
+        ];
+
         // Inisialisasi peta
         const map = L.map('map'); 
 
@@ -129,6 +137,21 @@
             weight: 0, // Menghapus garis luar
             fillOpacity: 0.05 // Transparansi lebih tinggi
         }).addTo(map);
+
+        // Menambahkan ikon rumah ke lokasi tambahan
+        const houseIcon = L.icon({
+            iconUrl: 'https://cdn-icons-png.flaticon.com/512/9187/9187555.png', // Ganti dengan URL ikon rumah yang diinginkan
+            iconSize: [30, 30], // Ukuran ikon
+            iconAnchor: [15, 30], // Titik yang menunjukkan posisi ikon
+            popupAnchor: [0, -30] // Titik yang menunjukkan posisi popup
+        });
+
+        additionalLocations.forEach(location => {
+            const [lat, lon] = location.coordinates.split(',').map(coord => parseFloat(coord.trim()));
+            L.marker([lat, lon], { icon: houseIcon })
+                .addTo(map)
+                .bindPopup(location.name);
+        });
 
         // Fungsi untuk menampilkan lokasi dari Firebase (lokasi pengguna)
         function updateMap(lat, lon) {
