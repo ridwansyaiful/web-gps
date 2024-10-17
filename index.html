@@ -39,8 +39,8 @@
             const lat = position.coords.latitude;
             const lon = position.coords.longitude;
 
-            // Buat ID perangkat menggunakan timestamp
-            const deviceId = 'device_' + Date.now(); // Menggunakan timestamp sebagai ID
+            // Menggunakan ID perangkat unik (dapat disesuaikan)
+            const deviceId = 'device_' + Math.floor(Math.random() * 10000); // Ganti dengan metode ID unik yang sesuai
 
             // Mengirim data lokasi ke Firebase
             const locationRef = ref(database, 'devices/' + deviceId); // ID perangkat unik
