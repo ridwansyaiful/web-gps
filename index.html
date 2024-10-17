@@ -99,9 +99,18 @@
             maxZoom: 19,
         }).addTo(map);
 
-        // Menambahkan marker untuk lokasi default
+        // Menambahkan marker untuk lokasi default dengan ikon rumah
+        const homeIcon = L.icon({
+            iconUrl: 'https://cdn-icons-png.flaticon.com/512/1946/1946450.png', // URL ikon rumah
+            iconSize: [25, 25], // Ukuran ikon
+            iconAnchor: [12, 25], // Titik jangkar ikon
+            popupAnchor: [0, -25] // Titik jangkar popup
+        });
+
         defaultLocations.forEach(location => {
-            L.marker([location.lat, location.lon]).addTo(map).bindPopup('Lokasi Default');
+            L.marker([location.lat, location.lon], { icon: homeIcon })
+                .addTo(map)
+                .bindPopup('Lokasi Default');
         });
 
         // Fungsi untuk menampilkan lokasi dari Firebase
