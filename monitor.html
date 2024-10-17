@@ -42,25 +42,33 @@
             maxZoom: 19,
         }).addTo(map);
 
-        // Fungsi untuk menampilkan lokasi
-        function updateMap(lat, lon) {
-            // Menghapus marker lama jika ada
-            if (window.marker) {
-                map.removeLayer(window.marker);
+        const markers = {}; // Simpan marker untuk setiap perangkat
+
+        function updateMap(deviceId, lat, lon) {
+            // Jika marker sudah ada, perbarui posisi
+            if (markers[deviceId]) {
+                markers[deviceId].setLatLng([lat, lon]);
+            } else {
+                // Tambahkan marker baru untuk perangkat baru
+                markers[deviceId] = L.marker([lat, lon]).addTo(map);
             }
-            // Tambahkan marker ke peta
-            window.marker = L.marker([lat, lon]).addTo(map);
-            map.setView([lat, lon], 15); // Pindahkan peta ke lokasi baru dan zoom level 15
+            // Pindahkan peta ke lokasi perangkat
+            map.setView([lat, lon], 15); // Zoom level 15
         }
 
-        // Fungsi untuk mendapatkan data dari Firebase
         function getLocationFromFirebase() {
-            const locationRef = ref(database, 'devices'); // Mengambil semua perangkat
+            const locationRef = ref(database, 'devices');
             onValue(locationRef, (snapshot) => {
+                // Hapus semua marker sebelumnya
+                for (const id in markers) {
+                    map.removeLayer(markers[id]);
+                }
+                markers = {}; // Reset marker
                 snapshot.forEach((childSnapshot) => {
                     const data = childSnapshot.val();
                     if (data) {
-                        updateMap(data.latitude, data.longitude);
+                        const deviceId = childSnapshot.key; // Ambil ID perangkat
+                        updateMap(deviceId, data.latitude, data.longitude);
                     }
                 });
             });
