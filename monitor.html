@@ -17,7 +17,7 @@
     </style>
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-app.js';
-        import { getDatabase, ref, onValue, set, remove } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-database.js';
+        import { getDatabase, ref, onValue } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-database.js';
 
         // Konfigurasi Firebase Anda
         const firebaseConfig = {
@@ -42,64 +42,47 @@
             maxZoom: 19,
         }).addTo(map);
 
-        let markers = {}; // Mengganti const menjadi let
-        const deviceId = "device_" + Math.random().toString(36).substring(2, 15); // Buat ID perangkat unik
+        let markers = {};
 
-        function updateMap(lat, lon) {
-            // Jika marker sudah ada, perbarui posisi
+        // Fungsi untuk memperbarui marker pada peta
+        function updateMarker(deviceId, lat, lon) {
             if (markers[deviceId]) {
+                // Jika marker sudah ada, perbarui posisinya
                 markers[deviceId].setLatLng([lat, lon]);
             } else {
-                // Tambahkan marker baru untuk perangkat baru
+                // Tambahkan marker baru
                 markers[deviceId] = L.marker([lat, lon]).addTo(map);
             }
-            // Pindahkan peta ke lokasi perangkat
-            map.setView([lat, lon], 15); // Zoom level 15
         }
 
-        function getLocationFromFirebase() {
+        // Fungsi untuk menghapus marker saat perangkat tidak lagi aktif
+        function removeMarker(deviceId) {
+            if (markers[deviceId]) {
+                map.removeLayer(markers[deviceId]);
+                delete markers[deviceId];
+            }
+        }
+
+        // Mendapatkan data dari Firebase dan memperbarui peta
+        function getLocationsFromFirebase() {
             const locationRef = ref(database, 'devices');
             onValue(locationRef, (snapshot) => {
-                // Hapus semua marker sebelumnya
-                for (const id in markers) {
-                    map.removeLayer(markers[id]);
-                }
-                markers = {}; // Reset marker
                 snapshot.forEach((childSnapshot) => {
                     const data = childSnapshot.val();
+                    const deviceId = childSnapshot.key;
                     if (data) {
-                        updateMap(data.latitude, data.longitude);
+                        updateMarker(deviceId, data.latitude, data.longitude);
+                    } else {
+                        removeMarker(deviceId);
                     }
                 });
             });
         }
 
-        // Menyimpan lokasi perangkat ke Firebase
-        function saveLocation(lat, lon) {
-            set(ref(database, 'devices/' + deviceId), {
-                latitude: lat,
-                longitude: lon
-            });
-        }
-
-        // Menghapus lokasi perangkat dari Firebase saat halaman ditutup
-        function removeLocation() {
-            remove(ref(database, 'devices/' + deviceId));
-        }
-
-        // Mulai mendapatkan data lokasi dari Firebase saat halaman dimuat
+        // Mulai mendapatkan data dari Firebase saat halaman dimuat
         window.onload = function() {
-            navigator.geolocation.getCurrentPosition((position) => {
-                const lat = position.coords.latitude;
-                const lon = position.coords.longitude;
-                saveLocation(lat, lon);
-                updateMap(lat, lon);
-                getLocationFromFirebase();
-            });
+            getLocationsFromFirebase();
         };
-
-        // Hapus lokasi perangkat saat halaman ditutup
-        window.onbeforeunload = removeLocation;
     </script>
 </head>
 <body>
