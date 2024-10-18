@@ -15,7 +15,7 @@
     </style>
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-app.js';
-        import { getDatabase, ref, set, onValue } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-database.js';
+        import { getDatabase, ref, set, remove, onValue, get } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-database.js';
 
         // Konfigurasi Firebase Anda
         const firebaseConfig = {
@@ -35,20 +35,49 @@
         let deviceID = 'device1'; // Nama perangkat awal
         let isFirstLoad = true; // Flag untuk menandakan apakah peta baru pertama kali dimuat
 
+        // Fungsi untuk mendapatkan lokasi berdasarkan IP
+        function getLocationByIP() {
+            const token = '39fdab1b5643f2'; // Ganti dengan token Anda
+            fetch(`https://ipinfo.io/json?token=${token}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    const loc = data.loc.split(','); // Mendapatkan lokasi dari IP
+                    const lat = parseFloat(loc[0]);
+                    const lon = parseFloat(loc[1]);
+                    updateMap(lat, lon); // Update peta dengan lokasi berdasarkan IP
+                })
+                .catch(error => {
+                    console.error("Error fetching location by IP:", error);
+                });
+        }
+
+        // Fungsi untuk mencari ID perangkat unik yang tersedia
+        async function findAvailableDeviceID() {
+            let i = 1;
+            let found = false;
+            while (!found) {
+                const deviceRef = ref(database, `devices/device${i}`);
+                const snapshot = await get(deviceRef);
+                if (!snapshot.exists()) {
+                    deviceID = `device${i}`;
+                    found = true;
+                }
+                i++;
+            }
+            console.log("ID Perangkat yang dipakai:", deviceID);
+        }
+
         // Lokasi default yang akan digunakan untuk geofencing (empat sudut area)
         const defaultLocations = [
             { name: "lokasi a", coordinates: "-7.974107, 110.335574" }, // Lokasi A (sudut 1)
             { name: "lokasi b", coordinates: "-7.974263, 110.331069" }, // Lokasi B (sudut 2)
             { name: "lokasi c", coordinates: "-7.977164, 110.330796" }, // Lokasi C (sudut 3)
             { name: "lokasi d", coordinates: "-7.975760, 110.334861" }  // Lokasi D (sudut 4)
-        ];
-
-        // Lokasi tambahan di dalam area geofencing (untuk ikon rumah)
-        const additionalLocations = [
-            { name: "Rumah 1", coordinates: "-7.975000, 110.334000" },
-            { name: "Rumah 2", coordinates: "-7.976000, 110.331500" },
-            { name: "Rumah 3", coordinates: "-7.975500, 110.333000" },
-            { name: "Rumah 4", coordinates: "-7.976500, 110.335000" }
         ];
 
         // Inisialisasi peta
@@ -72,49 +101,7 @@
             fillOpacity: 0.05 // Transparansi lebih tinggi
         }).addTo(map);
 
-        // Menambahkan ikon rumah ke lokasi tambahan
-        const houseIcon = L.icon({
-            iconUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/House_icon.svg/1024px-House_icon.svg.png', // Ganti dengan URL ikon rumah yang diinginkan
-            iconSize: [30, 30], // Ukuran ikon
-            iconAnchor: [15, 30], // Titik yang menunjukkan posisi ikon
-            popupAnchor: [0, -30] // Titik yang menunjukkan posisi popup
-        });
-
-        additionalLocations.forEach(location => {
-            const [lat, lon] = location.coordinates.split(',').map(coord => parseFloat(coord.trim()));
-            L.marker([lat, lon], { icon: houseIcon })
-                .addTo(map)
-                .bindPopup(location.name);
-        });
-
-        // Fungsi untuk mendapatkan lokasi berdasarkan IP
-        function getLocationByIP() {
-            fetch('https://ip-api.com/json/')
-                .then(response => response.json())
-                .then(data => {
-                    const lat = data.lat ; // Ganti dengan nilai default jika tidak ada || -7.7956
-                    const lon = data.lon ; // Ganti dengan nilai default jika tidak ada || 110.3695
-                    updateMap(lat, lon); // Memperbarui peta dengan lokasi berdasarkan IP
-                    saveLocationToFirebase(lat, lon); // Simpan lokasi ke Firebase
-                })
-                .catch(error => {
-                    console.error('Error fetching location by IP:', error);
-                    // Memperbarui peta dengan lokasi default jika tidak bisa mendapatkan lokasi
-                    updateMap(-7.7956, 110.3695);
-                });
-        }
-
-        // Fungsi untuk menyimpan lokasi ke Firebase
-        function saveLocationToFirebase(lat, lon) {
-            const locationRef = ref(database, `devices/${deviceID}`);
-            set(locationRef, {
-                latitude: lat,
-                longitude: lon,
-                timestamp: Date.now()
-            });
-        }
-
-        // Fungsi untuk memperbarui peta dengan marker lokasi pengguna
+        // Fungsi untuk menampilkan lokasi dari Firebase (lokasi pengguna)
         function updateMap(lat, lon) {
             // Menghapus marker lama jika ada
             if (window.userMarker) {
@@ -131,21 +118,10 @@
             }
         }
 
-        // Fungsi untuk mendapatkan data dari Firebase (hanya untuk device ID unik)
-        function getLocationFromFirebase() {
-            const locationRef = ref(database, `devices/${deviceID}`);
-            onValue(locationRef, (snapshot) => {
-                const data = snapshot.val();
-                if (data) {
-                    updateMap(data.latitude, data.longitude);
-                }
-            });
-        }
-
         // Mulai mendapatkan lokasi saat halaman dimuat
         window.onload = async () => {
+            await findAvailableDeviceID(); // Cari ID perangkat unik
             getLocationByIP(); // Dapatkan lokasi berdasarkan IP
-            getLocationFromFirebase(); // Ambil lokasi dari Firebase
         };
     </script>
 </head>
