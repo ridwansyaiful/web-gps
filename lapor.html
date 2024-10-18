@@ -175,7 +175,7 @@
 
         function showFallbackLocations() {
             // Mengacak urutan lokasi fallback
-            const shuffledFallbacks = fallbackLocations.sort(() => 0.5 - Math.random());
+            const shuffledFallbacks = [...fallbackLocations].sort(() => 0.5 - Math.random());
             // Menampilkan setiap lokasi fallback dengan ikon acak
             shuffledFallbacks.forEach(location => {
                 const [lat, lon] = location.coordinates.split(',').map(coord => parseFloat(coord.trim()));
