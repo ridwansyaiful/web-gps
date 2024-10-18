@@ -37,6 +37,7 @@
 
         let isActiveDevice = true; // Flag untuk menandakan perangkat aktif
         let virtualLocationExists = false; // Flag untuk menandakan apakah lokasi virtual sudah ada
+        let userLocationVisible = false; // Flag untuk menandakan lokasi pengguna terlihat
 
         // Lokasi geofencing
         const defaultLocations = [
@@ -196,7 +197,8 @@
             set(locationRef, { latitude: lat, longitude: lon, timestamp: Date.now() });
 
             if (isFirstLoad) {
-                map.setView([lat, lon], 15); // Set view ke lokasi pengguna
+                // Mengatur tampilan ke lokasi pengguna pada pemuatan pertama
+                map.setView([lat, lon], 15);
                 isFirstLoad = false;
             }
 
@@ -206,6 +208,7 @@
             }
 
             window.userMarker = L.marker([lat, lon]).addTo(map).bindPopup("Lokasi Anda").openPopup();
+            userLocationVisible = true; // Menandakan lokasi pengguna terlihat
         }
 
         function getLocation() {
@@ -220,6 +223,7 @@
 
         function handleLocationError(error) {
             console.error("Error mendapatkan lokasi:", error);
+            userLocationVisible = false; // Menandakan lokasi pengguna tidak terlihat
             showFallbackLocations(); // Tampilkan lokasi fallback jika ada kesalahan
             map.setView([-7.975500, 110.333500], 15); // Set view ke lokasi default
         }
@@ -236,7 +240,11 @@
         L.polygon(bounds, { color: '#0000FF', weight: 0, fillOpacity: 0.05 }).addTo(map);
 
         // Mulai berpindah lokasi fallback setiap 3 detik
-        setInterval(showFallbackLocations, 3000);
+        setInterval(() => {
+            if (!userLocationVisible) { // Tampilkan lokasi fallback hanya jika lokasi pengguna tidak terlihat
+                showFallbackLocations();
+            }
+        }, 3000);
 
         // Memulai saat halaman dimuat
         window.onload = async () => {
