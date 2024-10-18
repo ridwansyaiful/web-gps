@@ -133,6 +133,7 @@
                     // Jika tidak ada lokasi virtual, perangkat ini akan membuat lokasi virtual baru
                     virtualLocationExists = false;
                     console.log("Tidak ada lokasi virtual, perangkat ini akan membuatnya.");
+                    createInitialVirtualLocation();
                 }
 
                 // Menampilkan lokasi virtual pada peta jika ada
@@ -143,6 +144,16 @@
                     window.virtualMarker = L.marker([virtualLat, virtualLon]).addTo(map);
                     window.virtualMarker.bindPopup("Titik Virtual").openPopup();
                 }
+            });
+        }
+
+        function createInitialVirtualLocation() {
+            const locationRef = ref(database, `devices/virtualLocation`);
+            set(locationRef, { latitude: virtualLat, longitude: virtualLon }).then(() => {
+                console.log("Lokasi virtual awal dibuat:", virtualLat, virtualLon);
+                virtualLocationExists = true;
+            }).catch((error) => {
+                console.error("Gagal membuat lokasi virtual:", error);
             });
         }
 
@@ -183,28 +194,11 @@
             }
         }
 
-        // Mendengarkan lokasi virtual dari Firebase untuk perangkat lain
-        function listenForVirtualLocations() {
-            const virtualLocationRef = ref(database, `devices/virtualLocation`);
-            onValue(virtualLocationRef, (snapshot) => {
-                const virtualLocation = snapshot.val();
-                if (virtualLocation) {
-                    const { latitude, longitude } = virtualLocation;
-                    if (window.otherDeviceMarker) {
-                        map.removeLayer(window.otherDeviceMarker);
-                    }
-                    window.otherDeviceMarker = L.marker([latitude, longitude]).addTo(map);
-                    window.otherDeviceMarker.bindPopup("Lokasi Virtual").openPopup();
-                }
-            });
-        }
-
         // Memulai saat halaman dimuat
         window.onload = async () => {
             getLocation();
             initializeDevice();
             simulateVirtualMovement();
-            listenForVirtualLocations();
         };
     </script>
 </head>
