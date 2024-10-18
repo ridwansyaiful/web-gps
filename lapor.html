@@ -210,17 +210,17 @@
                 alert("Geolocation tidak didukung oleh browser ini.");
                 showFallbackLocations(); // Tampilkan lokasi fallback jika geolocation tidak didukung
                 map.setView([-7.975500, 110.333500], 15); // Set view ke lokasi default
-                showFallbackLocations(); // Tampilkan lokasi fallback
             }
         }
 
         function handleLocationError(error) {
             console.error("Error mendapatkan lokasi:", error);
             showFallbackLocations(); // Tampilkan lokasi fallback jika ada kesalahan
+            map.setView([-7.975500, 110.333500], 15); // Set view ke lokasi default
         }
 
         // Inisialisasi peta
-        const map = L.map('map');
+        const map = L.map('map').setView([-7.975500, 110.333500], 15);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
 
         const bounds = defaultLocations.map(location => {
