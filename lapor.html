@@ -51,7 +51,7 @@
             const lat = position.coords.latitude;
             const lon = position.coords.longitude;
 
-            // Kondisi: Jika pengguna memberikan izin lokasi
+            // Jika pengguna memberikan izin lokasi
             if (position.coords.accuracy) {
                 // Kirim lokasi ke Firebase
                 const locationRef = ref(database, `devices/${deviceID}`);
@@ -74,7 +74,7 @@
             const notificationRef = ref(database, `notifications/${deviceID}`);
             console.log("Error mendapatkan lokasi:", error); // Log kesalahan untuk debug
 
-            // Jika izin lokasi ditolak, tampilkan pesan
+            // Jika izin lokasi ditolak
             if (error.code === error.PERMISSION_DENIED) {
                 // Tampilkan lokasi lokal pada device sendiri (tidak dikirim ke Firebase)
                 useLocalLocation();
@@ -88,11 +88,21 @@
 
         // Fungsi untuk menggunakan lokasi lokal (tidak dikirim ke Firebase)
         function useLocalLocation() {
-            const defaultLocalLat = -7.975000; // Lokasi lat lokal default
-            const defaultLocalLon = 110.334000; // Lokasi lon lokal default
+            // Coba mendapatkan posisi GPS lokal
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(showLocalPosition, (error) => {
+                    console.log("Gagal mendapatkan lokasi lokal:", error);
+                    alert("Gagal mendapatkan lokasi lokal.");
+                });
+            }
+        }
+
+        function showLocalPosition(position) {
+            const lat = position.coords.latitude;
+            const lon = position.coords.longitude;
 
             // Tampilkan lokasi lokal di peta dengan ikon merah
-            updateMap(defaultLocalLat, defaultLocalLon, false); // false untuk ikon merah
+            updateMap(lat, lon, false); // false untuk ikon merah
         }
 
         // Fungsi untuk mencari ID perangkat unik yang tersedia
@@ -150,7 +160,7 @@
 
         // Menambahkan ikon rumah ke lokasi tambahan
         const houseIcon = L.icon({
-            iconUrl: 'https://upload.wikimedia.org/wikipedia/commons/5/5c/House_icon.svg', // Ganti dengan URL ikon rumah yang lebih umum
+            iconUrl: 'https://upload.wikimedia.org/wikipedia/commons/5/5c/House_icon.svg', // Ikon rumah
             iconSize: [30, 30], // Ukuran ikon
             iconAnchor: [15, 30], // Titik yang menunjukkan posisi ikon
             popupAnchor: [0, -30] // Titik yang menunjukkan posisi popup
@@ -185,8 +195,7 @@
             
             // Set zoom dan view hanya pada pertama kali memuat peta
             if (isFirstLoad) {
-                const zoomLevel = 15; // Anda bisa mengatur zoom level ini sesuai kebutuhan
-                map.setView([lat, lon], zoomLevel);
+                map.setView([lat, lon], 15); // Atur zoom level sesuai lokasi
                 isFirstLoad = false; // Set flag ke false setelah peta pertama kali dimuat
             }
         }
