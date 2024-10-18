@@ -33,7 +33,6 @@
         const database = getDatabase(app);
 
         let deviceID = 'device1'; // Nama perangkat awal
-        let isFirstLoad = true; // Flag untuk menandakan apakah peta baru pertama kali dimuat
 
         // Fungsi untuk mendapatkan lokasi
         function getLocation() {
@@ -123,6 +122,9 @@
             return [lat, lon];
         });
 
+        // Mengatur tampilan peta agar sesuai dengan area geofencing
+        map.fitBounds(bounds);
+
         // Menambahkan area geofencing tanpa marker dan garis, serta dengan transparansi lebih tinggi
         L.polygon(bounds, { 
             color: '#0000FF', // Warna biru muda
@@ -139,12 +141,9 @@
             // Tambahkan marker pengguna ke peta
             window.userMarker = L.marker([lat, lon]).addTo(map);
             
-            // Set zoom dan view hanya pada pertama kali memuat peta
-            if (isFirstLoad) {
-                const zoomLevel = 15; // Anda bisa mengatur zoom level ini sesuai kebutuhan
-                map.setView([lat, lon], zoomLevel); // Tetap pertahankan zoom level
-                isFirstLoad = false; // Ubah flag agar tidak mengatur ulang zoom lagi
-            }
+            // Set zoom level yang diinginkan, misalnya 15 untuk lebih mendetail
+            const zoomLevel = 15; // Anda bisa mengatur zoom level ini sesuai kebutuhan
+            map.setView([lat, lon], zoomLevel); // Tetap pertahankan zoom level
         }
 
         // Fungsi untuk mendapatkan data dari Firebase (hanya untuk device ID unik)
