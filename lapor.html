@@ -54,14 +54,14 @@
         }
 
         function calculateDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371;
+            const R = 6371; // Radius Bumi dalam kilometer
             const dLat = (lat2 - lat1) * (Math.PI / 180);
             const dLon = (lon2 - lon1) * (Math.PI / 180);
             const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
                 Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
                 Math.sin(dLon / 2) * Math.sin(dLon / 2);
             const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-            return R * c;
+            return R * c; // Hasil dalam kilometer
         }
 
         function randomDirection(lastDirection) {
@@ -103,16 +103,15 @@
                     }
 
                     let nextLat, nextLon, direction;
-                    if (distanceToUser < 0.02) { // Hindari pengguna jika jaraknya kurang dari 0.02 derajat
+                    // Menghindari lokasi pengguna
+                    if (distanceToUser < 0.02) {
                         do {
                             [nextLat, nextLon, direction] = randomDirection(lastDirection);
                             nextLat = virtualLat + nextLat;
                             nextLon = virtualLon + nextLon;
-                        } while (calculateDistance(nextLat, nextLon, userLocation.latitude, userLocation.longitude) < 0.02);
-
-                        virtualLat = nextLat;
-                        virtualLon = nextLon;
+                        } while (calculateDistance(nextLat, nextLon, userLat, userLon) < 0.02 || !isInsideGeofence(nextLat, nextLon));
                     } else {
+                        // Pilih arah acak
                         [nextLat, nextLon, direction] = randomDirection(lastDirection);
                         nextLat = virtualLat + nextLat;
                         nextLon = virtualLon + nextLon;
@@ -126,15 +125,17 @@
                             idleCounter++;
                         }
 
+                        // Jika idle terlalu lama, pilih arah baru secara paksa
                         if (idleCounter >= 5) {
-                            // Jika idle terlalu lama, pilih arah baru secara paksa
                             lastDirection = null;
                             idleCounter = 0;
                         }
                     }
 
-                    updateFirebaseLocation(); // Update lokasi virtual ke Firebase
+                    // Perbarui lokasi virtual ke Firebase
+                    updateFirebaseLocation(); 
 
+                    // Perbarui marker di peta
                     if (window.virtualMarker) {
                         map.removeLayer(window.virtualMarker);
                     }
@@ -189,7 +190,6 @@
                 const virtualLocation = snapshot.val();
                 if (virtualLocation) {
                     const { latitude, longitude } = virtualLocation;
-                    // Perbarui marker untuk perangkat lain
                     if (window.otherDeviceMarker) {
                         map.removeLayer(window.otherDeviceMarker);
                     }
