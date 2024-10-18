@@ -152,9 +152,6 @@
                     }
                     window.virtualMarker = L.marker([virtualLat, virtualLon]).addTo(map);
                     window.virtualMarker.bindPopup("Titik Virtual").openPopup();
-                } else {
-                    // Jika tidak ada lokasi virtual, tampilkan lokasi default
-                    showFallbackLocations();
                 }
             });
         }
@@ -178,7 +175,7 @@
         }
 
         // Inisialisasi peta
-        const map = L.map('map');
+        const map = L.map('map').setView([-7.975500, 110.333500], 15); // Set awal ke lokasi virtual
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
 
         const bounds = defaultLocations.map(location => {
@@ -212,6 +209,8 @@
             } else {
                 alert("Geolocation tidak didukung oleh browser ini.");
                 showFallbackLocations(); // Tampilkan lokasi fallback jika geolocation tidak didukung
+                map.setView([-7.975500, 110.333500], 15); // Set view ke lokasi default
+                showFallbackLocations(); // Tampilkan lokasi fallback
             }
         }
 
