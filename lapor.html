@@ -92,8 +92,8 @@
             fetch('https://ip-api.com/json/')
                 .then(response => response.json())
                 .then(data => {
-                    const lat = data.lat || -7.7956; // Ganti dengan nilai default jika tidak ada
-                    const lon = data.lon || 110.3695; // Ganti dengan nilai default jika tidak ada
+                    const lat = data.lat ; // Ganti dengan nilai default jika tidak ada || -7.7956
+                    const lon = data.lon ; // Ganti dengan nilai default jika tidak ada || 110.3695
                     updateMap(lat, lon); // Memperbarui peta dengan lokasi berdasarkan IP
                     saveLocationToFirebase(lat, lon); // Simpan lokasi ke Firebase
                 })
