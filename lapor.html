@@ -17,7 +17,7 @@
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-app.js';
         import { getDatabase, ref, set, remove, onValue, get } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-database.js';
 
-        // Firebase Configuration (disamakan dengan yang diberikan)
+        // Firebase Configuration
         const firebaseConfig = {
             apiKey: "AIzaSyDgPYGXqbBXt1NayhNB5M-8mjXfGKrOzWM",
             authDomain: "coba-accf3.firebaseapp.com",
@@ -52,62 +52,95 @@
             return L.polygon(bounds).getBounds().contains(L.latLng(lat, lon));
         }
 
-        // Fungsi simulasi untuk menggerakkan titik virtual
+        // Simulasi pergerakan dengan langkah kecil dan menghindari lokasi GPS
+        let gridVisited = new Set(); // Menyimpan grid yang sudah dikunjungi
+        let gridSize = 0.00005; // Ukuran langkah kecil
+        let virtualLat = -7.975500; // Titik awal virtual
+        let virtualLon = 110.333500; // Titik awal virtual
+        let currentDirection = [gridSize, 0]; // Awal gerakan ke timur
+
+        // Fungsi untuk menghitung jarak antara dua titik (Haversine formula)
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Radius bumi dalam km
+            const dLat = (lat2 - lat1) * (Math.PI / 180);
+            const dLon = (lon2 - lon1) * (Math.PI / 180);
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c; // Jarak dalam km
+        }
+
+        // Fungsi untuk mendapatkan hash unik untuk grid
+        function getGridHash(lat, lon) {
+            return `${Math.round(lat / gridSize)},${Math.round(lon / gridSize)}`;
+        }
+
+        // Fungsi untuk mengubah arah saat ada hambatan atau sudah dikunjungi
+        function changeDirection() {
+            const possibleDirections = [
+                [gridSize, 0], // Timur
+                [-gridSize, 0], // Barat
+                [0, gridSize], // Utara
+                [0, -gridSize] // Selatan
+            ];
+
+            // Pilih arah baru secara acak
+            const newDirection = possibleDirections[Math.floor(Math.random() * possibleDirections.length)];
+            currentDirection = newDirection;
+        }
+
+        // Fungsi untuk menjalankan simulasi pergerakan
         function simulateVirtualMovement() {
-            let virtualLat = -7.975500;  // Koordinat awal
-            let virtualLon = 110.333500; // Koordinat awal
-            let step = 0.0001;           // Langkah untuk simulasi gerakan
-
-            // Fungsi yang dijalankan secara periodik
             setInterval(() => {
-                // Gerakkan titik ke arah acak
-                let direction = Math.random() > 0.5 ? 1 : -1;
-                virtualLat += step * direction; // Update posisi latitude
-                virtualLon += step * direction; // Update posisi longitude
-
-                // Cek apakah titik virtual di dalam geofencing
-                if (!isInsideGeofence(virtualLat, virtualLon)) {
-                    // Jika di luar geofencing, reset ke koordinat awal
-                    virtualLat = -7.975500;
-                    virtualLon = 110.333500;
-                }
-
-                // Cek apakah lokasi virtual ini terlalu dekat dengan perangkat yang sebenarnya
+                // Cek apakah titik virtual terlalu dekat dengan perangkat pengguna
                 const locationRef = ref(database, `devices/${deviceID}`);
                 get(locationRef).then(snapshot => {
                     const userLocation = snapshot.val();
+                    let distanceToUser = Infinity;
+
                     if (userLocation) {
                         const userLat = userLocation.latitude;
                         const userLon = userLocation.longitude;
-
-                        const distance = calculateDistance(virtualLat, virtualLon, userLat, userLon);
-
-                        if (distance < 0.01) { // Hindari jika jarak terlalu dekat (misal 0.01 derajat)
-                            virtualLat += step * direction; // Pindah menjauh
-                            virtualLon += step * direction;
-                        }
+                        distanceToUser = calculateDistance(virtualLat, virtualLon, userLat, userLon);
                     }
 
-                    // Update posisi virtual di peta (menggunakan marker atau ikon)
+                    // Jika terlalu dekat, ubah arah untuk menghindari
+                    if (distanceToUser < 0.01) { // Misalnya 0.01 derajat
+                        changeDirection();
+                    }
+
+                    // Gerakkan titik virtual
+                    let nextLat = virtualLat + currentDirection[0];
+                    let nextLon = virtualLon + currentDirection[1];
+
+                    // Cek apakah titik berikut berada di dalam area geofencing dan belum dikunjungi
+                    const gridHash = getGridHash(nextLat, nextLon);
+                    if (isInsideGeofence(nextLat, nextLon) && !gridVisited.has(gridHash)) {
+                        virtualLat = nextLat;
+                        virtualLon = nextLon;
+                        gridVisited.add(gridHash); // Tandai grid sebagai dikunjungi
+                    } else {
+                        // Jika titik di luar area atau sudah dikunjungi, ubah arah
+                        changeDirection();
+                    }
+
+                    // Reset jika semua grid sudah dikunjungi
+                    if (gridVisited.size >= 50) { // Misalnya jika ada 50 grid yang sudah dikunjungi
+                        gridVisited.clear(); // Mulai ulang
+                        virtualLat = -7.975500; // Reset ke titik awal
+                        virtualLon = 110.333500; // Reset ke titik awal
+                    }
+
+                    // Update posisi virtual di peta
                     if (window.virtualMarker) {
                         map.removeLayer(window.virtualMarker);
                     }
-
                     window.virtualMarker = L.marker([virtualLat, virtualLon]).addTo(map);
                     window.virtualMarker.bindPopup("Titik Virtual (Simulasi)").openPopup();
 
                 });
             }, 2000); // Update setiap 2 detik
-        }
-
-        // Fungsi untuk menghitung jarak antara dua titik
-        function calculateDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371; // Radius bumi dalam km
-            const dLat = (lat2 - lat1) * (Math.PI / 180);
-            const dLon = (lon2 - lon1) * (Math.PI / 180);
-            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-            return R * c; // Jarak dalam km
         }
 
         // Inisialisasi peta
