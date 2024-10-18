@@ -61,6 +61,7 @@
     function displayLocation(hasPermission, latitude, longitude) {
         const iconToUse = hasPermission ? userIcon : localIcon; // Pilih ikon berdasarkan izin
 
+        // Marker untuk lokasi perangkat
         const marker = L.marker([latitude, longitude], { icon: iconToUse }).addTo(map);
         marker.bindPopup("Lokasi Anda").openPopup();
         
@@ -78,11 +79,19 @@
             map.setView([position.coords.latitude, position.coords.longitude], 13); // Set view peta ke lokasi pengguna
         },
         (error) => {
-            // Izin ditolak, menggunakan lokasi lokal
-            const localLat = -7.975187; // Ganti dengan koordinat lokal Anda
-            const localLon = 110.333603; // Ganti dengan koordinat lokal Anda
-            displayLocation(false, localLat, localLon);
-            map.setView([localLat, localLon], 13); // Set view peta ke lokasi lokal
+            // Izin ditolak, mencoba mendapatkan lokasi lokal
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    // Jika mendapatkan lokasi lokal
+                    displayLocation(false, position.coords.latitude, position.coords.longitude);
+                    map.setView([position.coords.latitude, position.coords.longitude], 13); // Set view peta ke lokasi lokal
+                },
+                (error) => {
+                    // Jika gagal mendapatkan lokasi
+                    console.error("Gagal mendapatkan lokasi lokal:", error);
+                    alert("Tidak dapat memperoleh lokasi Anda.");
+                }
+            );
         }
     );
 
