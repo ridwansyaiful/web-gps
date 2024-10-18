@@ -15,7 +15,7 @@
     </style>
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-app.js';
-        import { getDatabase, ref, set, remove, onValue, get } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-database.js';
+        import { getDatabase, ref, set, get } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-database.js';
 
         // Firebase Configuration
         const firebaseConfig = {
@@ -57,7 +57,6 @@
         let gridSize = 0.00005; // Ukuran langkah kecil
         let virtualLat = -7.975500; // Titik awal virtual
         let virtualLon = 110.333500; // Titik awal virtual
-        let currentDirection = [gridSize, 0]; // Awal gerakan ke timur
 
         // Fungsi untuk menghitung jarak antara dua titik (Haversine formula)
         function calculateDistance(lat1, lon1, lat2, lon2) {
@@ -76,21 +75,18 @@
             return `${Math.round(lat / gridSize)},${Math.round(lon / gridSize)}`;
         }
 
-        // Fungsi untuk mengubah arah saat ada hambatan atau sudah dikunjungi
-        function changeDirection() {
-            const possibleDirections = [
+        // Fungsi untuk mengubah arah secara acak
+        function randomDirection() {
+            const directions = [
                 [gridSize, 0], // Timur
                 [-gridSize, 0], // Barat
                 [0, gridSize], // Utara
                 [0, -gridSize] // Selatan
             ];
-
-            // Pilih arah baru secara acak
-            const newDirection = possibleDirections[Math.floor(Math.random() * possibleDirections.length)];
-            currentDirection = newDirection;
+            return directions[Math.floor(Math.random() * directions.length)];
         }
 
-        // Fungsi untuk menjalankan simulasi pergerakan
+        // Fungsi untuk menjalankan simulasi pergerakan acak
         function simulateVirtualMovement() {
             setInterval(() => {
                 // Cek apakah titik virtual terlalu dekat dengan perangkat pengguna
@@ -105,28 +101,38 @@
                         distanceToUser = calculateDistance(virtualLat, virtualLon, userLat, userLon);
                     }
 
-                    // Jika terlalu dekat, ubah arah untuk menghindari
-                    if (distanceToUser < 0.01) { // Misalnya 0.01 derajat
-                        changeDirection();
-                    }
+                    // Jika terlalu dekat, pilih arah yang random yang menjauh
+                    if (distanceToUser < 0.01) { // Misalnya jarak aman 0.01 derajat
+                        let nextLat, nextLon;
+                        do {
+                            const [dLat, dLon] = randomDirection();
+                            nextLat = virtualLat + dLat;
+                            nextLon = virtualLon + dLon;
+                        } while (calculateDistance(nextLat, nextLon, userLocation.latitude, userLocation.longitude) < 0.01);
 
-                    // Gerakkan titik virtual
-                    let nextLat = virtualLat + currentDirection[0];
-                    let nextLon = virtualLon + currentDirection[1];
-
-                    // Cek apakah titik berikut berada di dalam area geofencing dan belum dikunjungi
-                    const gridHash = getGridHash(nextLat, nextLon);
-                    if (isInsideGeofence(nextLat, nextLon) && !gridVisited.has(gridHash)) {
                         virtualLat = nextLat;
                         virtualLon = nextLon;
-                        gridVisited.add(gridHash); // Tandai grid sebagai dikunjungi
                     } else {
-                        // Jika titik di luar area atau sudah dikunjungi, ubah arah
-                        changeDirection();
+                        // Pilih arah random
+                        const [dLat, dLon] = randomDirection();
+                        let nextLat = virtualLat + dLat;
+                        let nextLon = virtualLon + dLon;
+
+                        // Cek apakah titik berikut berada di dalam area geofencing dan belum dikunjungi
+                        const gridHash = getGridHash(nextLat, nextLon);
+                        if (isInsideGeofence(nextLat, nextLon) && !gridVisited.has(gridHash)) {
+                            virtualLat = nextLat;
+                            virtualLon = nextLon;
+                            gridVisited.add(gridHash); // Tandai grid sebagai dikunjungi
+                        } else {
+                            // Jika di luar area atau sudah dikunjungi, ubah arah secara random
+                            virtualLat += dLat;
+                            virtualLon += dLon;
+                        }
                     }
 
                     // Reset jika semua grid sudah dikunjungi
-                    if (gridVisited.size >= 50) { // Misalnya jika ada 50 grid yang sudah dikunjungi
+                    if (gridVisited.size >= 50) { // Misalnya setelah 50 grid
                         gridVisited.clear(); // Mulai ulang
                         virtualLat = -7.975500; // Reset ke titik awal
                         virtualLon = 110.333500; // Reset ke titik awal
