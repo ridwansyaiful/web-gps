@@ -11,6 +11,25 @@
             height: 400px;
             width: 100%;
         }
+        .container {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .button {
+            display: inline-block;
+            margin: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #4CAF50; /* Warna hijau */
+            color: white; /* Warna teks */
+            border: none;
+            border-radius: 5px;
+            text-decoration: none; /* Menghilangkan garis bawah */
+        }
+        .button:hover {
+            background-color: #45a049; /* Warna saat hover */
+        }
     </style>
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-app.js';
@@ -185,20 +204,21 @@
                 map.removeLayer(window.fallbackMarker);
             }
 
-            // Tampilkan lokasi fallback dengan ikon yang sama
-            window.fallbackMarker = L.marker([lat, lon], { icon: icon }).addTo(map);
-            window.fallbackMarker.bindPopup(location.name).openPopup();
+            window.fallbackMarker = L.marker([lat, lon], { icon: icon }).addTo(map).bindPopup(location.name).openPopup();
+
+            // Mengatur tampilan ke lokasi fallback
+            map.setView([lat, lon], 15);
         }
 
         function showPosition(position) {
             const lat = position.coords.latitude;
             const lon = position.coords.longitude;
-            const locationRef = ref(database, `devices/${deviceID}`);
-            set(locationRef, { latitude: lat, longitude: lon });
 
-            // Hapus marker fallback jika ada
-            if (window.fallbackMarker) {
-                map.removeLayer(window.fallbackMarker);
+            if (isInsideGeofence(lat, lon)) {
+                // Hapus lokasi fallback jika ada
+                if (window.fallbackMarker) {
+                    map.removeLayer(window.fallbackMarker);
+                }
             }
 
             if (isFirstLoad) {
@@ -268,5 +288,11 @@
 <body>
     <h1>Sistem Lapor</h1>
     <div id="map"></div>
+    <div class="container">
+        <h2>Pilih Salah Satu</h2>
+        <a class="button" href="halaman1.html">Tombol 1</a>
+        <a class="button" href="halaman2.html">Tombol 2</a>
+        <a class="button" href="halaman3.html">Tombol 3</a>
+    </div>
 </body>
 </html>
