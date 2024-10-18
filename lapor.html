@@ -53,6 +53,13 @@
             { name: "Fallback Lokasi 3", coordinates: "-7.975500, 110.333000" }
         ];
 
+        // Ikon yang berbeda untuk lokasi fallback
+        const icons = [
+            L.icon({ iconUrl: 'https://example.com/icon1.png', iconSize: [25, 41] }), // Ganti dengan URL ikon yang valid
+            L.icon({ iconUrl: 'https://example.com/icon2.png', iconSize: [25, 41] }), // Ganti dengan URL ikon yang valid
+            L.icon({ iconUrl: 'https://example.com/icon3.png', iconSize: [25, 41] })  // Ganti dengan URL ikon yang valid
+        ];
+
         function isInsideGeofence(lat, lon) {
             const bounds = defaultLocations.map(location => {
                 const [lat, lon] = location.coordinates.split(',').map(coord => parseFloat(coord.trim()));
@@ -167,23 +174,16 @@
         }
 
         function showFallbackLocations() {
-            fallbackLocations.forEach(location => {
+            // Mengacak urutan lokasi fallback
+            const shuffledFallbacks = fallbackLocations.sort(() => 0.5 - Math.random());
+            // Menampilkan setiap lokasi fallback dengan ikon acak
+            shuffledFallbacks.forEach(location => {
                 const [lat, lon] = location.coordinates.split(',').map(coord => parseFloat(coord.trim()));
-                const marker = L.marker([lat, lon]).addTo(map);
-                marker.bindPopup(location.name).openPopup(); // Popup dengan nama yang sama
+                const randomIcon = icons[Math.floor(Math.random() * icons.length)];
+                const marker = L.marker([lat, lon], { icon: randomIcon }).addTo(map);
+                marker.bindPopup(location.name).openPopup();
             });
         }
-
-        // Inisialisasi peta
-        const map = L.map('map').setView([-7.975500, 110.333500], 15); // Set awal ke lokasi virtual
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
-
-        const bounds = defaultLocations.map(location => {
-            const [lat, lon] = location.coordinates.split(',').map(coord => parseFloat(coord.trim()));
-            return [lat, lon];
-        });
-
-        L.polygon(bounds, { color: '#0000FF', weight: 0, fillOpacity: 0.05 }).addTo(map);
 
         function showPosition(position) {
             const lat = position.coords.latitude;
@@ -218,6 +218,17 @@
             console.error("Error mendapatkan lokasi:", error);
             showFallbackLocations(); // Tampilkan lokasi fallback jika ada kesalahan
         }
+
+        // Inisialisasi peta
+        const map = L.map('map');
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+
+        const bounds = defaultLocations.map(location => {
+            const [lat, lon] = location.coordinates.split(',').map(coord => parseFloat(coord.trim()));
+            return [lat, lon];
+        });
+
+        L.polygon(bounds, { color: '#0000FF', weight: 0, fillOpacity: 0.05 }).addTo(map);
 
         // Memulai saat halaman dimuat
         window.onload = async () => {
