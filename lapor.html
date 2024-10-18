@@ -9,15 +9,15 @@
     <style>
         /* Atur tinggi peta */
         #map {
-            height: 400px; /* Atur tinggi peta */
-            width: 100%; /* Lebar penuh */
+            height: 400px;
+            width: 100%;
         }
     </style>
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-app.js';
         import { getDatabase, ref, set, remove, onValue, get } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-database.js';
 
-        // Konfigurasi Firebase Anda
+        // Firebase Configuration (disamakan dengan yang diberikan)
         const firebaseConfig = {
             apiKey: "AIzaSyDgPYGXqbBXt1NayhNB5M-8mjXfGKrOzWM",
             authDomain: "coba-accf3.firebaseapp.com",
@@ -28,169 +28,138 @@
             appId: "1:171764982868:web:19c716f6617667514679c1"
         };
 
-        // Inisialisasi Firebase
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
 
-        let deviceID = 'device1'; // Nama perangkat awal
-        let isFirstLoad = true; // Flag untuk menandakan apakah peta baru pertama kali dimuat
+        let deviceID = 'device1'; // ID perangkat
+        let isFirstLoad = true; // Flag untuk memantau apakah peta sudah dimuat
 
-        // Fungsi untuk mendapatkan lokasi
-        function getLocation() {
-            console.log("Meminta lokasi...");
-            if (navigator.geolocation) {
-                navigator.geolocation.watchPosition(showPosition, showError, {
-                    enableHighAccuracy: true
-                });
-            } else {
-                alert("Geolocation tidak didukung oleh browser ini.");
-            }
-        }
+        // Lokasi geofencing
+        const defaultLocations = [
+            { name: "lokasi a", coordinates: "-7.974107, 110.335574" },
+            { name: "lokasi b", coordinates: "-7.974263, 110.331069" },
+            { name: "lokasi c", coordinates: "-7.977164, 110.330796" },
+            { name: "lokasi d", coordinates: "-7.975760, 110.334861" }
+        ];
 
-        function showPosition(position) {
-            const lat = position.coords.latitude;
-            const lon = position.coords.longitude;
-
-            // Mengirim data lokasi ke Firebase
-            const locationRef = ref(database, `devices/${deviceID}`);
-            set(locationRef, {
-                latitude: lat,
-                longitude: lon,
-                timestamp: Date.now()
+        // Fungsi untuk menentukan apakah sebuah titik berada di dalam area geofencing
+        function isInsideGeofence(lat, lon) {
+            const bounds = defaultLocations.map(location => {
+                const [lat, lon] = location.coordinates.split(',').map(coord => parseFloat(coord.trim()));
+                return [lat, lon];
             });
 
-            // Menghapus pesan penolakan izin (jika ada)
-            const notificationRef = ref(database, `notifications/${deviceID}`);
-            remove(notificationRef);
+            return L.polygon(bounds).getBounds().contains(L.latLng(lat, lon));
         }
 
-        function showError(error) {
-            const notificationRef = ref(database, `notifications/${deviceID}`);
-            console.log("Error mendapatkan lokasi:", error); // Log kesalahan untuk debug
-            switch (error.code) {
-                case error.PERMISSION_DENIED:
-                    set(notificationRef, {
-                        message: "Target tidak izinkan lokasi"
-                    });
-                    break;
-                case error.POSITION_UNAVAILABLE:
-                    alert("Informasi lokasi tidak tersedia.");
-                    break;
-                case error.TIMEOUT:
-                    alert("Permintaan untuk mendapatkan lokasi pengguna telah waktunya habis.");
-                    break;
-                case error.UNKNOWN_ERROR:
-                    alert("Terjadi kesalahan yang tidak diketahui.");
-                    break;
-            }
-        }
+        // Fungsi simulasi untuk menggerakkan titik virtual
+        function simulateVirtualMovement() {
+            let virtualLat = -7.975500;  // Koordinat awal
+            let virtualLon = 110.333500; // Koordinat awal
+            let step = 0.0001;           // Langkah untuk simulasi gerakan
 
-        // Fungsi untuk mencari ID perangkat unik yang tersedia
-        async function findAvailableDeviceID() {
-            let i = 1;
-            let found = false;
-            while (!found) {
-                const deviceRef = ref(database, `devices/device${i}`);
-                const snapshot = await get(deviceRef);
-                if (!snapshot.exists()) {
-                    deviceID = `device${i}`;
-                    found = true;
+            // Fungsi yang dijalankan secara periodik
+            setInterval(() => {
+                // Gerakkan titik ke arah acak
+                let direction = Math.random() > 0.5 ? 1 : -1;
+                virtualLat += step * direction; // Update posisi latitude
+                virtualLon += step * direction; // Update posisi longitude
+
+                // Cek apakah titik virtual di dalam geofencing
+                if (!isInsideGeofence(virtualLat, virtualLon)) {
+                    // Jika di luar geofencing, reset ke koordinat awal
+                    virtualLat = -7.975500;
+                    virtualLon = 110.333500;
                 }
-                i++;
-            }
-            console.log("ID Perangkat yang dipakai:", deviceID);
+
+                // Cek apakah lokasi virtual ini terlalu dekat dengan perangkat yang sebenarnya
+                const locationRef = ref(database, `devices/${deviceID}`);
+                get(locationRef).then(snapshot => {
+                    const userLocation = snapshot.val();
+                    if (userLocation) {
+                        const userLat = userLocation.latitude;
+                        const userLon = userLocation.longitude;
+
+                        const distance = calculateDistance(virtualLat, virtualLon, userLat, userLon);
+
+                        if (distance < 0.01) { // Hindari jika jarak terlalu dekat (misal 0.01 derajat)
+                            virtualLat += step * direction; // Pindah menjauh
+                            virtualLon += step * direction;
+                        }
+                    }
+
+                    // Update posisi virtual di peta (menggunakan marker atau ikon)
+                    if (window.virtualMarker) {
+                        map.removeLayer(window.virtualMarker);
+                    }
+
+                    window.virtualMarker = L.marker([virtualLat, virtualLon]).addTo(map);
+                    window.virtualMarker.bindPopup("Titik Virtual (Simulasi)").openPopup();
+
+                });
+            }, 2000); // Update setiap 2 detik
         }
 
-        // Lokasi default yang akan digunakan untuk geofencing (empat sudut area)
-        const defaultLocations = [
-            { name: "lokasi a", coordinates: "-7.974107, 110.335574" }, // Lokasi A (sudut 1)
-            { name: "lokasi b", coordinates: "-7.974263, 110.331069" }, // Lokasi B (sudut 2)
-            { name: "lokasi c", coordinates: "-7.977164, 110.330796" }, // Lokasi C (sudut 3)
-            { name: "lokasi d", coordinates: "-7.975760, 110.334861" }  // Lokasi D (sudut 4)
-        ];
-
-        // Lokasi tambahan di dalam area geofencing (untuk ikon rumah)
-        const additionalLocations = [
-            { name: "Rumah 1", coordinates: "-7.975000, 110.334000" },
-            { name: "Rumah 2", coordinates: "-7.976000, 110.331500" },
-            { name: "Rumah 3", coordinates: "-7.975500, 110.333000" },
-            { name: "Rumah 4", coordinates: "-7.976500, 110.335000" }
-        ];
+        // Fungsi untuk menghitung jarak antara dua titik
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Radius bumi dalam km
+            const dLat = (lat2 - lat1) * (Math.PI / 180);
+            const dLon = (lon2 - lon1) * (Math.PI / 180);
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c; // Jarak dalam km
+        }
 
         // Inisialisasi peta
-        const map = L.map('map'); 
+        const map = L.map('map');
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
 
-        // Menambahkan layer peta dari OpenStreetMap
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19,
-        }).addTo(map);
-
-        // Menghitung bounding box (geofencing) dari empat sudut lokasi
+        // Geofencing bounds
         const bounds = defaultLocations.map(location => {
             const [lat, lon] = location.coordinates.split(',').map(coord => parseFloat(coord.trim()));
             return [lat, lon];
         });
 
-        // Menambahkan area geofencing tanpa marker dan garis, serta dengan transparansi lebih tinggi
-        L.polygon(bounds, { 
-            color: '#0000FF', // Warna biru muda
-            weight: 0, // Menghapus garis luar
-            fillOpacity: 0.05 // Transparansi lebih tinggi
-        }).addTo(map);
+        // Menambahkan area geofencing ke peta
+        L.polygon(bounds, { color: '#0000FF', weight: 0, fillOpacity: 0.05 }).addTo(map);
 
-        // Menambahkan ikon rumah ke lokasi tambahan
-        const houseIcon = L.icon({
-            iconUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/House_icon.svg/1024px-House_icon.svg.png', // Ganti dengan URL ikon rumah yang diinginkan
-            iconSize: [30, 30], // Ukuran ikon
-            iconAnchor: [15, 30], // Titik yang menunjukkan posisi ikon
-            popupAnchor: [0, -30] // Titik yang menunjukkan posisi popup
-        });
+        // Menampilkan lokasi pengguna
+        function showPosition(position) {
+            const lat = position.coords.latitude;
+            const lon = position.coords.longitude;
+            const locationRef = ref(database, `devices/${deviceID}`);
+            set(locationRef, { latitude: lat, longitude: lon, timestamp: Date.now() });
 
-        additionalLocations.forEach(location => {
-            const [lat, lon] = location.coordinates.split(',').map(coord => parseFloat(coord.trim()));
-            L.marker([lat, lon], { icon: houseIcon })
-                .addTo(map)
-                .bindPopup(location.name);
-        });
+            if (isFirstLoad) {
+                map.setView([lat, lon], 15);
+                isFirstLoad = false;
+            }
 
-        // Fungsi untuk menampilkan lokasi dari Firebase (lokasi pengguna)
-        function updateMap(lat, lon) {
-            // Menghapus marker lama jika ada
             if (window.userMarker) {
                 map.removeLayer(window.userMarker);
             }
-            // Tambahkan marker pengguna ke peta
-            window.userMarker = L.marker([lat, lon]).addTo(map);
-            
-            // Set zoom dan view hanya pada pertama kali memuat peta
-            if (isFirstLoad) {
-                const zoomLevel = 15; // Anda bisa mengatur zoom level ini sesuai kebutuhan
-                map.setView([lat, lon], zoomLevel); // Tetap pertahankan zoom level
-                isFirstLoad = false; // Ubah flag agar tidak mengatur ulang zoom lagi
+
+            window.userMarker = L.marker([lat, lon]).addTo(map).bindPopup("Lokasi Anda").openPopup();
+        }
+
+        function getLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.watchPosition(showPosition);
+            } else {
+                alert("Geolocation tidak didukung oleh browser ini.");
             }
         }
 
-        // Fungsi untuk mendapatkan data dari Firebase (hanya untuk device ID unik)
-        function getLocationFromFirebase() {
-            const locationRef = ref(database, `devices/${deviceID}`);
-            onValue(locationRef, (snapshot) => {
-                const data = snapshot.val();
-                if (data) {
-                    updateMap(data.latitude, data.longitude);
-                }
-            });
-        }
-
-        // Mulai mendapatkan lokasi saat halaman dimuat
-        window.onload = async () => {
-            await findAvailableDeviceID(); // Cari ID perangkat unik
+        // Jalankan simulasi pergerakan
+        window.onload = () => {
             getLocation();
-            getLocationFromFirebase();
+            simulateVirtualMovement();
         };
+
     </script>
 </head>
 <body>
     <h1>Sistem Lapor</h1>
-    <div id="map"></div> <!-- Elemen untuk peta -->
+    <div id="map"></div>
 </body>
 </html>
