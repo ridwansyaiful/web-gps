@@ -1,197 +1,238 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Lapor</title>
+    <title>Peta Lokasi Dusun Krapyak</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <style>
-        /* Atur tinggi peta */
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        .text {
+            font-size: 24px;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .datetime {
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
         #map {
-            height: 400px; /* Atur tinggi peta */
-            width: 100%; /* Lebar penuh */
+            width: 100%;
+            height: 400px;
+        }
+        #no-location {
+            text-align: center;
+            font-size: 20px;
+            margin-bottom: 20px;
+        }
+        #reload-instructions {
+            font-size: 16px;
+            color: gray;
+            text-align: center;
+        }
+        footer {
+            margin-top: 20px;
+            font-size: 14px;
+            text-align: center;
+            color: gray;
+        }
+        .social-icons {
+            margin-top: 1px;
+            text-align: center;
+        }
+        .social-icons img {
+            width: 24px;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+        .social-icons a {
+            color: #007BFF;
+            text-decoration: none;
+            font-size: 16px;
+        }
+        .social-icons a:hover {
+            text-decoration: underline;
+        }
+        footer a {
+            color: #007BFF;
+            text-decoration: none;
+            margin-left: 5px;
+        }
+        footer a:hover {
+            text-decoration: underline;
+        }
+        #mampir {
+            margin-bottom: 100px 0;
+            font-size: 15px;
+            text-align: center;
         }
     </style>
-    <script type="module">
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-app.js';
-        import { getDatabase, ref, set, remove, onValue, get } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-database.js';
-
-        // Konfigurasi Firebase Anda
-        const firebaseConfig = {
-            apiKey: "AIzaSyDgPYGXqbBXt1NayhNB5M-8mjXfGKrOzWM",
-            authDomain: "coba-accf3.firebaseapp.com",
-            databaseURL: "https://coba-accf3-default-rtdb.asia-southeast1.firebasedatabase.app/",
-            projectId: "coba-accf3",
-            storageBucket: "coba-accf3.appspot.com",
-            messagingSenderId: "171764982868",
-            appId: "1:171764982868:web:19c716f6617667514679c1"
-        };
-
-        // Inisialisasi Firebase
-        const app = initializeApp(firebaseConfig);
-        const database = getDatabase(app);
-
-        let deviceID = 'device1'; // Nama perangkat awal
-        let isFirstLoad = true; // Flag untuk menandakan apakah peta baru pertama kali dimuat
-
-        // Fungsi untuk mendapatkan lokasi
-        function getLocation() {
-            console.log("Meminta lokasi...");
-            if (navigator.geolocation) {
-                navigator.geolocation.watchPosition(showPosition, showError, {
-                    enableHighAccuracy: true
-                });
-            } else {
-                alert("Geolocation tidak didukung oleh browser ini.");
-            }
-        }
-
-        function showPosition(position) {
-            const lat = position.coords.latitude;
-            const lon = position.coords.longitude;
-
-            // Mengirim data lokasi ke Firebase
-            const locationRef = ref(database, `devices/${deviceID}`);
-            set(locationRef, {
-                latitude: lat,
-                longitude: lon,
-                timestamp: Date.now()
-            });
-
-            // Menghapus pesan penolakan izin (jika ada)
-            const notificationRef = ref(database, `notifications/${deviceID}`);
-            remove(notificationRef);
-        }
-
-        function showError(error) {
-            const notificationRef = ref(database, `notifications/${deviceID}`);
-            console.log("Error mendapatkan lokasi:", error); // Log kesalahan untuk debug
-            switch (error.code) {
-                case error.PERMISSION_DENIED:
-                    set(notificationRef, {
-                        message: "Target tidak izinkan lokasi"
-                    });
-                    break;
-                case error.POSITION_UNAVAILABLE:
-                    alert("Informasi lokasi tidak tersedia.");
-                    break;
-                case error.TIMEOUT:
-                    alert("Permintaan untuk mendapatkan lokasi pengguna telah waktunya habis.");
-                    break;
-                case error.UNKNOWN_ERROR:
-                    alert("Terjadi kesalahan yang tidak diketahui.");
-                    break;
-            }
-        }
-
-        // Fungsi untuk mencari ID perangkat unik yang tersedia
-        async function findAvailableDeviceID() {
-            let i = 1;
-            let found = false;
-            while (!found) {
-                const deviceRef = ref(database, `devices/device${i}`);
-                const snapshot = await get(deviceRef);
-                if (!snapshot.exists()) {
-                    deviceID = `device${i}`;
-                    found = true;
-                }
-                i++;
-            }
-            console.log("ID Perangkat yang dipakai:", deviceID);
-        }
-
-        // Lokasi default yang akan digunakan untuk geofencing (empat sudut area)
-        const defaultLocations = [
-            { name: "lokasi a", coordinates: "-7.974107, 110.335574" }, // Lokasi A (sudut 1)
-            { name: "lokasi b", coordinates: "-7.974263, 110.331069" }, // Lokasi B (sudut 2)
-            { name: "lokasi c", coordinates: "-7.977164, 110.330796" }, // Lokasi C (sudut 3)
-            { name: "lokasi d", coordinates: "-7.975760, 110.334861" }  // Lokasi D (sudut 4)
-        ];
-
-        // Lokasi tambahan di dalam area geofencing (untuk ikon rumah)
-        const additionalLocations = [
-            { name: "Rumah 1", coordinates: "-7.975239071376829, 110.33363363289517" },
-            { name: "Rumah 2", coordinates: "-7.9752330947761205, 110.33374159180576" },
-            { name: "Rumah 3", coordinates: "-7.975426, 110.333733" },
-            { name: "Rumah 4", coordinates: "-7.975414152245273, 110.33382892976937" },
-            { name: "Rumah 5", coordinates: "-7.975411783107595, 110.33390787489331" }
-        ];
-
-        // Inisialisasi peta
-        const map = L.map('map'); 
-
-        // Menambahkan layer peta dari OpenStreetMap
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19,
-        }).addTo(map);
-
-        // Menghitung bounding box (geofencing) dari empat sudut lokasi
-        const bounds = defaultLocations.map(location => {
-            const [lat, lon] = location.coordinates.split(',').map(coord => parseFloat(coord.trim()));
-            return [lat, lon];
-        });
-
-        // Menambahkan area geofencing tanpa marker dan garis, serta dengan transparansi lebih tinggi
-        L.polygon(bounds, { 
-            color: '#0000FF', // Warna biru muda
-            weight: 0, // Menghapus garis luar
-            fillOpacity: 0.05 // Transparansi lebih tinggi
-        }).addTo(map);
-
-        // Menambahkan ikon rumah ke lokasi tambahan
-        const houseIcon = L.icon({
-            iconUrl: 'https://cdn-icons-png.flaticon.com/512/9187/9187555.png', // Ganti dengan URL ikon rumah yang diinginkan
-            iconSize: [30, 30], // Ukuran ikon
-            iconAnchor: [15, 30], // Titik yang menunjukkan posisi ikon
-            popupAnchor: [0, -30] // Titik yang menunjukkan posisi popup
-        });
-
-        additionalLocations.forEach(location => {
-            const [lat, lon] = location.coordinates.split(',').map(coord => parseFloat(coord.trim()));
-            L.marker([lat, lon], { icon: houseIcon })
-                .addTo(map)
-                .bindPopup(location.name);
-        });
-
-        // Fungsi untuk menampilkan lokasi dari Firebase (lokasi pengguna)
-        function updateMap(lat, lon) {
-            // Menghapus marker lama jika ada
-            if (window.userMarker) {
-                map.removeLayer(window.userMarker);
-            }
-            // Tambahkan marker pengguna ke peta
-            window.userMarker = L.marker([lat, lon]).addTo(map);
-            
-            // Set zoom dan view hanya pada pertama kali memuat peta
-            if (isFirstLoad) {
-                const zoomLevel = 65; // Anda bisa mengatur zoom level ini sesuai kebutuhan
-                map.setView([lat, lon], zoomLevel); // Tetap pertahankan zoom level
-                isFirstLoad = false; // Ubah flag agar tidak mengatur ulang zoom lagi
-            }
-        }
-
-        // Fungsi untuk mendapatkan data dari Firebase (hanya untuk device ID unik)
-        function getLocationFromFirebase() {
-            const locationRef = ref(database, `devices/${deviceID}`);
-            onValue(locationRef, (snapshot) => {
-                const data = snapshot.val();
-                if (data) {
-                    updateMap(data.latitude, data.longitude);
-                }
-            });
-        }
-
-        // Mulai mendapatkan lokasi saat halaman dimuat
-        window.onload = async () => {
-            await findAvailableDeviceID(); // Cari ID perangkat unik
-            getLocation();
-            getLocationFromFirebase();
-        };
-    </script>
 </head>
 <body>
-    <h1>Sistem Lapor</h1>
-    <div id="map"></div> <!-- Elemen untuk peta -->
+    <div class="text" id="status-text">Menunggu GPS terdaftar...</div>
+    <div class="datetime" id="datetime"></div>
+    <div id="map"></div>
+    <div id="no-location" style="display:none;">
+        <div class="text">Mungkin Browser Anda Tidak Mendukung Akses atau izin lokasi tidak diberikan</div>
+    </div>
+    <div id="reload-instructions" style="display:none;">
+        <p>Silakan hapus history browser anda kemudian reload halaman ini dan berikan akses lokasi agar mendapatkan legalisasi GPS.</p>
+    </div>
+
+    <div class="text"> --- </div>
+
+    <div id="mampir">Monggo Pinarak :</div>
+    <div class="social-icons">
+        <div>
+            <img src="https://cdn-icons-png.flaticon.com/512/3046/3046121.png" alt="TikTok" />
+            <a href="https://www.tiktok.com/@skak_official?_t=8qXrh64j5yK&_r=1" target="_blank">@skak_official</a>
+        </div>
+        <div>
+            <img src="https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png" alt="Instagram" />
+            <a href="https://instagram.com/skakofficiall?igsh=anY1NTV4OGRxOXpw" target="_blank">@skakofficiall</a>
+        </div>
+    </div>
+
+    <footer>
+        &copy; Copyright 2024. 
+        <a>gmail@skak.com</a>
+    </footer>
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        function updateDateTime() {
+            const now = new Date();
+            const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
+            const dateString = now.toLocaleDateString('id-ID', options);
+            const timeString = now.toLocaleTimeString('id-ID');
+            document.getElementById('datetime').innerHTML = `${dateString}, ${timeString}`;
+        }
+
+        setInterval(updateDateTime, 1000);
+        updateDateTime();
+
+        const blueIcon = L.icon({
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+            shadowSize: [41, 41]
+        });
+
+        const redIcon = L.icon({
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+            shadowSize: [41, 41]
+        });
+
+        // Fungsi untuk inisialisasi peta
+        function initMap(latitude, longitude) {
+            const map = L.map('map').setView([latitude, longitude], 12);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+
+            const defaultLocations = [
+                [-7.975170331583142, 110.33359843004808],
+                [-7.97568648922711, 110.33419306696939],
+                [-7.975933, 110.331807],
+                [-7.9751992266457785, 110.33376458475364],
+                [-7.974719313075581, 110.33436067751754],
+                [-7.975381806906474, 110.3318287156946],
+                [-7.974879236565477, 110.33204523984485],
+                [-7.975233222761793, 110.33228851752398],
+                [-7.975277446682036, 110.33237942403035],
+                [-7.975827390541225, 110.33193425453798]
+            ];
+
+            // Membuat bounding box yang mencakup semua lokasi
+            const bounds = L.latLngBounds(defaultLocations);
+
+            // Tambahkan marker untuk setiap lokasi default
+            defaultLocations.forEach(loc => {
+                L.marker(loc, { icon: blueIcon }).addTo(map).bindPopup('Lokasi Legal (Contoh)').openPopup();
+                bounds.extend(loc);  // Tambahkan lokasi ke bounding box
+            });
+
+            // Tambahkan marker lokasi pengguna
+            L.marker([latitude, longitude], { icon: blueIcon }).addTo(map).bindPopup('Lokasi Anda (GPS Legal)').openPopup();
+            bounds.extend([latitude, longitude]);  // Tambahkan lokasi pengguna ke bounding box
+
+            // Sesuaikan peta agar semua marker terlihat
+            map.fitBounds(bounds);
+
+            setTimeout(() => {
+                map.invalidateSize();
+            }, 100);
+        }
+
+        // Fungsi untuk menampilkan peta dengan lokasi default jika gagal mengambil lokasi pengguna
+        function showDefaultMap() {
+            const map = L.map('map').setView([-7.7956, 110.3695], 12);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+
+            const defaultLocations = [
+                [-7.975170331583142, 110.33359843004808],
+                [-7.97568648922711, 110.33419306696939],
+                [-7.975933, 110.331807],
+                [-7.9751992266457785, 110.33376458475364],
+                [-7.974719313075581, 110.33436067751754],
+                [-7.975381806906474, 110.3318287156946],
+                [-7.974879236565477, 110.33204523984485],
+                [-7.975233222761793, 110.33228851752398],
+                [-7.975277446682036, 110.33237942403035],
+                [-7.975827390541225, 110.33193425453798]
+            ];
+
+            // Membuat bounding box yang mencakup semua lokasi
+            const bounds = L.latLngBounds(defaultLocations);
+
+            // Tambahkan marker untuk setiap lokasi default
+            defaultLocations.forEach(loc => {
+                L.marker(loc, { icon: blueIcon }).addTo(map).bindPopup('Lokasi Legal (Contoh)').openPopup();
+                bounds.extend(loc);  // Tambahkan lokasi ke bounding box
+            });
+
+            // Sesuaikan peta agar semua marker terlihat
+            map.fitBounds(bounds);
+
+            setTimeout(() => {
+                map.invalidateSize();
+            }, 100);
+        }
+
+        // Coba mendapatkan lokasi pengguna
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                position => {
+                    const latitude = position.coords.latitude;
+                    const longitude = position.coords.longitude;
+                    initMap(latitude, longitude);
+                },
+                error => {
+                    document.getElementById('status-text').textContent = 'Tidak dapat mengakses lokasi, menampilkan lokasi default.';
+                    document.getElementById('no-location').style.display = 'block';
+                    showDefaultMap();
+                }
+            );
+        } else {
+            document.getElementById('status-text').textContent = 'Browser tidak mendukung akses lokasi, menampilkan lokasi default.';
+            document.getElementById('no-location').style.display = 'block';
+            showDefaultMap();
+        }
+    </script>
 </body>
 </html>
