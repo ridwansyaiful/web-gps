@@ -46,6 +46,13 @@
             { name: "lokasi d", coordinates: "-7.975760, 110.334861" }
         ];
 
+        // Lokasi default jika izin geolocation ditolak
+        const fallbackLocations = [
+            { name: "Fallback Lokasi 1", coordinates: "-7.975000, 110.334000" },
+            { name: "Fallback Lokasi 2", coordinates: "-7.976000, 110.331500" },
+            { name: "Fallback Lokasi 3", coordinates: "-7.975500, 110.333000" }
+        ];
+
         function isInsideGeofence(lat, lon) {
             const bounds = defaultLocations.map(location => {
                 const [lat, lon] = location.coordinates.split(',').map(coord => parseFloat(coord.trim()));
@@ -87,6 +94,8 @@
                     const userLocationRef = ref(database, `devices/${deviceID}`);
                     get(userLocationRef).then(snapshot => {
                         const userLocation = snapshot.val();
+                        if (!userLocation) return; // Cek jika data pengguna tidak ada
+
                         let userLat = userLocation.latitude;
                         let userLon = userLocation.longitude;
 
@@ -143,6 +152,9 @@
                     }
                     window.virtualMarker = L.marker([virtualLat, virtualLon]).addTo(map);
                     window.virtualMarker.bindPopup("Titik Virtual").openPopup();
+                } else {
+                    // Jika tidak ada lokasi virtual, tampilkan lokasi default
+                    showFallbackLocations();
                 }
             });
         }
@@ -154,6 +166,14 @@
                 virtualLocationExists = true;
             }).catch((error) => {
                 console.error("Gagal membuat lokasi virtual:", error);
+            });
+        }
+
+        function showFallbackLocations() {
+            fallbackLocations.forEach(location => {
+                const [lat, lon] = location.coordinates.split(',').map(coord => parseFloat(coord.trim()));
+                const marker = L.marker([lat, lon]).addTo(map);
+                marker.bindPopup(location.name).openPopup(); // Popup dengan nama yang sama
             });
         }
 
@@ -188,10 +208,16 @@
 
         function getLocation() {
             if (navigator.geolocation) {
-                navigator.geolocation.watchPosition(showPosition);
+                navigator.geolocation.watchPosition(showPosition, handleLocationError);
             } else {
                 alert("Geolocation tidak didukung oleh browser ini.");
+                showFallbackLocations(); // Tampilkan lokasi fallback jika geolocation tidak didukung
             }
+        }
+
+        function handleLocationError(error) {
+            console.error("Error mendapatkan lokasi:", error);
+            showFallbackLocations(); // Tampilkan lokasi fallback jika ada kesalahan
         }
 
         // Memulai saat halaman dimuat
