@@ -14,7 +14,7 @@
     </style>
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-app.js';
-        import { getDatabase, ref, set, get } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-database.js';
+        import { getDatabase, ref, set, get, onValue } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-database.js';
 
         const firebaseConfig = {
             apiKey: "AIzaSyDgPYGXqbBXt1NayhNB5M-8mjXfGKrOzWM",
@@ -29,9 +29,9 @@
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
 
-        let deviceID = 'device1';
+        let deviceID = 'device1'; // Ganti dengan 'device2' untuk perangkat kedua
         let isFirstLoad = true;
-        let stepSize = 0.00005; // Ukuran langkah yang lebih besar
+        let stepSize = 0.0002; // Ukuran langkah
         let virtualLat = -7.975500;
         let virtualLon = 110.333500;
         let lastDirection = null;
@@ -50,7 +50,6 @@
                 const [lat, lon] = location.coordinates.split(',').map(coord => parseFloat(coord.trim()));
                 return [lat, lon];
             });
-
             return L.polygon(bounds).getBounds().contains(L.latLng(lat, lon));
         }
 
@@ -85,10 +84,15 @@
             return availableDirections[Math.floor(Math.random() * availableDirections.length)];
         }
 
+        function updateFirebaseLocation() {
+            const locationRef = ref(database, `devices/${deviceID}/virtualLocation`);
+            set(locationRef, { latitude: virtualLat, longitude: virtualLon });
+        }
+
         function simulateVirtualMovement() {
             setInterval(() => {
-                const locationRef = ref(database, `devices/${deviceID}`);
-                get(locationRef).then(snapshot => {
+                const userLocationRef = ref(database, `devices/${deviceID}`);
+                get(userLocationRef).then(snapshot => {
                     const userLocation = snapshot.val();
                     let distanceToUser = Infinity;
 
@@ -129,6 +133,8 @@
                         }
                     }
 
+                    updateFirebaseLocation(); // Update lokasi virtual ke Firebase
+
                     if (window.virtualMarker) {
                         map.removeLayer(window.virtualMarker);
                     }
@@ -138,6 +144,7 @@
             }, 2000);
         }
 
+        // Inisialisasi peta
         const map = L.map('map');
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
 
@@ -174,8 +181,27 @@
             }
         }
 
+        // Mendengarkan perubahan lokasi virtual dari Firebase untuk perangkat lain
+        function listenForVirtualLocations() {
+            const otherDeviceID = 'device2'; // ID perangkat lain yang akan dipantau
+            const virtualLocationRef = ref(database, `devices/${otherDeviceID}/virtualLocation`);
+            onValue(virtualLocationRef, (snapshot) => {
+                const virtualLocation = snapshot.val();
+                if (virtualLocation) {
+                    const { latitude, longitude } = virtualLocation;
+                    // Perbarui marker untuk perangkat lain
+                    if (window.otherDeviceMarker) {
+                        map.removeLayer(window.otherDeviceMarker);
+                    }
+                    window.otherDeviceMarker = L.marker([latitude, longitude]).addTo(map);
+                    window.otherDeviceMarker.bindPopup("Titik Virtual Perangkat 2").openPopup();
+                }
+            });
+        }
+
         window.onload = () => {
             getLocation();
+            listenForVirtualLocations();
             simulateVirtualMovement();
         };
     </script>
