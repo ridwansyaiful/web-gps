@@ -194,7 +194,12 @@
             const lat = position.coords.latitude;
             const lon = position.coords.longitude;
             const locationRef = ref(database, `devices/${deviceID}`);
-            set(locationRef, { latitude: lat, longitude: lon, timestamp: Date.now() });
+            set(locationRef, { latitude: lat, longitude: lon });
+
+            // Hapus marker fallback jika ada
+            if (window.fallbackMarker) {
+                map.removeLayer(window.fallbackMarker);
+            }
 
             if (isFirstLoad) {
                 // Mengatur tampilan ke lokasi pengguna pada pemuatan pertama
@@ -231,13 +236,6 @@
         // Inisialisasi peta
         const map = L.map('map').setView([-7.975500, 110.333500], 15);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
-
-        const bounds = defaultLocations.map(location => {
-            const [lat, lon] = location.coordinates.split(',').map(coord => parseFloat(coord.trim()));
-            return [lat, lon];
-        });
-
-        L.polygon(bounds, { color: '#0000FF', weight: 0, fillOpacity: 0.05 }).addTo(map);
 
         // Mulai berpindah lokasi fallback setiap 3 detik
         setInterval(() => {
