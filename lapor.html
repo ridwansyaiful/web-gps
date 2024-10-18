@@ -196,7 +196,7 @@
             set(locationRef, { latitude: lat, longitude: lon, timestamp: Date.now() });
 
             if (isFirstLoad) {
-                map.setView([lat, lon], 15);
+                map.setView([lat, lon], 15); // Set view ke lokasi pengguna
                 isFirstLoad = false;
             }
 
@@ -243,7 +243,6 @@
             getLocation();
             initializeDevice();
             simulateVirtualMovement();
-            showFallbackLocations(); // Tampilkan lokasi fallback pertama
         };
     </script>
 </head>
