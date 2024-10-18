@@ -57,6 +57,7 @@
         let gridSize = 0.00005; // Ukuran langkah kecil
         let virtualLat = -7.975500; // Titik awal virtual
         let virtualLon = 110.333500; // Titik awal virtual
+        let lastDirection = null; // Arah terakhir yang diambil
 
         // Fungsi untuk menghitung jarak antara dua titik (Haversine formula)
         function calculateDistance(lat1, lon1, lat2, lon2) {
@@ -75,15 +76,26 @@
             return `${Math.round(lat / gridSize)},${Math.round(lon / gridSize)}`;
         }
 
-        // Fungsi untuk mengubah arah secara acak
-        function randomDirection() {
+        // Fungsi untuk mengubah arah secara acak tanpa mengulang arah berlawanan
+        function randomDirection(lastDirection) {
             const directions = [
-                [gridSize, 0], // Timur
-                [-gridSize, 0], // Barat
-                [0, gridSize], // Utara
-                [0, -gridSize] // Selatan
+                [gridSize, 0, 'east'], // Timur
+                [-gridSize, 0, 'west'], // Barat
+                [0, gridSize, 'north'], // Utara
+                [0, -gridSize, 'south'] // Selatan
             ];
-            return directions[Math.floor(Math.random() * directions.length)];
+
+            // Cegah gerakan berlawanan dengan arah sebelumnya
+            const oppositeDirections = {
+                'north': 'south',
+                'south': 'north',
+                'east': 'west',
+                'west': 'east'
+            };
+
+            let availableDirections = directions.filter(dir => dir[2] !== oppositeDirections[lastDirection]);
+
+            return availableDirections[Math.floor(Math.random() * availableDirections.length)];
         }
 
         // Fungsi untuk menjalankan simulasi pergerakan acak
@@ -101,22 +113,22 @@
                         distanceToUser = calculateDistance(virtualLat, virtualLon, userLat, userLon);
                     }
 
+                    let nextLat, nextLon, direction;
                     // Jika terlalu dekat, pilih arah yang random yang menjauh
                     if (distanceToUser < 0.01) { // Misalnya jarak aman 0.01 derajat
-                        let nextLat, nextLon;
                         do {
-                            const [dLat, dLon] = randomDirection();
-                            nextLat = virtualLat + dLat;
-                            nextLon = virtualLon + dLon;
+                            [nextLat, nextLon, direction] = randomDirection(lastDirection);
+                            nextLat = virtualLat + nextLat;
+                            nextLon = virtualLon + nextLon;
                         } while (calculateDistance(nextLat, nextLon, userLocation.latitude, userLocation.longitude) < 0.01);
 
                         virtualLat = nextLat;
                         virtualLon = nextLon;
                     } else {
-                        // Pilih arah random
-                        const [dLat, dLon] = randomDirection();
-                        let nextLat = virtualLat + dLat;
-                        let nextLon = virtualLon + dLon;
+                        // Pilih arah random selain yang berlawanan
+                        [nextLat, nextLon, direction] = randomDirection(lastDirection);
+                        nextLat = virtualLat + nextLat;
+                        nextLon = virtualLon + nextLon;
 
                         // Cek apakah titik berikut berada di dalam area geofencing dan belum dikunjungi
                         const gridHash = getGridHash(nextLat, nextLon);
@@ -124,10 +136,7 @@
                             virtualLat = nextLat;
                             virtualLon = nextLon;
                             gridVisited.add(gridHash); // Tandai grid sebagai dikunjungi
-                        } else {
-                            // Jika di luar area atau sudah dikunjungi, ubah arah secara random
-                            virtualLat += dLat;
-                            virtualLon += dLon;
+                            lastDirection = direction; // Simpan arah yang baru diambil
                         }
                     }
 
@@ -136,6 +145,7 @@
                         gridVisited.clear(); // Mulai ulang
                         virtualLat = -7.975500; // Reset ke titik awal
                         virtualLon = 110.333500; // Reset ke titik awal
+                        lastDirection = null; // Reset arah terakhir
                     }
 
                     // Update posisi virtual di peta
