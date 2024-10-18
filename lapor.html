@@ -29,16 +29,14 @@
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
 
-        let deviceID = 'device1'; // Ganti untuk perangkat lainnya
+        let deviceID = 'device1'; // ID perangkat aktif saat ini
         let isFirstLoad = true;
         let stepSize = 0.0002; // Ukuran langkah
         let virtualLat = -7.975500; // Lokasi virtual awal
         let virtualLon = 110.333500; // Lokasi virtual awal
 
-        // Waktu timeout untuk memeriksa ketersediaan perangkat
-        let activeTimeout;
-        const timeoutDuration = 1000; // Dalam milidetik
-        let isActiveDevice = true; // Flag untuk mengecek apakah perangkat aktif
+        let isActiveDevice = true; // Flag untuk menandakan perangkat aktif
+        let virtualLocationExists = false; // Flag untuk menandakan apakah lokasi virtual sudah ada
 
         // Lokasi geofencing
         const defaultLocations = [
@@ -84,7 +82,7 @@
 
         function simulateVirtualMovement() {
             setInterval(() => {
-                if (isActiveDevice) {
+                if (isActiveDevice && virtualLocationExists) {
                     // Mengambil lokasi pengguna dari Firebase
                     const userLocationRef = ref(database, `devices/${deviceID}`);
                     get(userLocationRef).then(snapshot => {
@@ -117,30 +115,35 @@
                         }
                         window.virtualMarker = L.marker([virtualLat, virtualLon]).addTo(map);
                         window.virtualMarker.bindPopup("Titik Virtual (Simulasi)").openPopup();
-
-                        // Reset timeout jika perangkat masih aktif
-                        clearTimeout(activeTimeout);
-                        activeTimeout = setTimeout(() => {
-                            switchActiveDevice();
-                        }, timeoutDuration);
                     });
                 }
             }, 2000);
         }
 
-        function switchActiveDevice() {
-            // Hanya switch perangkat jika perangkat saat ini tidak aktif
-            if (isActiveDevice) {
-                isActiveDevice = false; // Menandakan perangkat tidak aktif
-                console.log(`Device ${deviceID} tidak aktif, menunggu perangkat lain.`);
-                setTimeout(() => {
-                    // Memilih perangkat lain secara acak
-                    const otherDeviceID = `device${Math.floor(Math.random() * 5) + 1}`; // Misalnya ada 5 perangkat
-                    console.log(`Perangkat baru yang aktif: ${otherDeviceID}`);
-                    deviceID = otherDeviceID;
-                    isActiveDevice = true; // Menandakan perangkat kembali aktif
-                }, timeoutDuration);
-            }
+        function initializeDevice() {
+            const virtualLocationRef = ref(database, `devices/virtualLocation`);
+            onValue(virtualLocationRef, (snapshot) => {
+                const virtualLocation = snapshot.val();
+                if (virtualLocation) {
+                    virtualLat = virtualLocation.latitude;
+                    virtualLon = virtualLocation.longitude;
+                    virtualLocationExists = true; // Menandakan lokasi virtual ada
+                    console.log("Mengikuti lokasi virtual:", virtualLat, virtualLon);
+                } else {
+                    // Jika tidak ada lokasi virtual, perangkat ini akan membuat lokasi virtual baru
+                    virtualLocationExists = false;
+                    console.log("Tidak ada lokasi virtual, perangkat ini akan membuatnya.");
+                }
+
+                // Menampilkan lokasi virtual pada peta jika ada
+                if (virtualLocationExists) {
+                    if (window.virtualMarker) {
+                        map.removeLayer(window.virtualMarker);
+                    }
+                    window.virtualMarker = L.marker([virtualLat, virtualLon]).addTo(map);
+                    window.virtualMarker.bindPopup("Titik Virtual").openPopup();
+                }
+            });
         }
 
         // Inisialisasi peta
@@ -190,7 +193,8 @@
                     if (window.otherDeviceMarker) {
                         map.removeLayer(window.otherDeviceMarker);
                     }
-                    window.otherDeviceMarker = L.marker([latitude, longitude]).addTo(map).bindPopup("Lokasi Virtual").openPopup();
+                    window.otherDeviceMarker = L.marker([latitude, longitude]).addTo(map);
+                    window.otherDeviceMarker.bindPopup("Lokasi Virtual").openPopup();
                 }
             });
         }
@@ -198,6 +202,7 @@
         // Memulai saat halaman dimuat
         window.onload = async () => {
             getLocation();
+            initializeDevice();
             simulateVirtualMovement();
             listenForVirtualLocations();
         };
