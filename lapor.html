@@ -36,6 +36,7 @@
         let virtualLon = 110.333500;
         let lastDirection = null;
         let idleCounter = 0; // Counter untuk mendeteksi jika titik berhenti lama
+        let lastMoveDirection = null; // Untuk menyimpan arah terakhir
 
         // Lokasi geofencing
         const defaultLocations = [
@@ -64,28 +65,18 @@
             return R * c; // Hasil dalam kilometer
         }
 
-        function randomDirection(lastDirection) {
+        function randomDirection() {
             const directions = [
                 [stepSize, 0, 'east'],
                 [-stepSize, 0, 'west'],
                 [0, stepSize, 'north'],
                 [0, -stepSize, 'south']
             ];
-
-            const oppositeDirections = {
-                'north': 'south',
-                'south': 'north',
-                'east': 'west',
-                'west': 'east'
-            };
-
-            let availableDirections = directions.filter(dir => dir[2] !== oppositeDirections[lastDirection]);
-
-            return availableDirections[Math.floor(Math.random() * availableDirections.length)];
+            return directions[Math.floor(Math.random() * directions.length)];
         }
 
         function updateFirebaseLocation() {
-            const locationRef = ref(database, `devices/${deviceID}/virtualLocation`);
+            const locationRef = ref(database, `devices/virtualLocation`);
             set(locationRef, { latitude: virtualLat, longitude: virtualLon });
         }
 
@@ -102,24 +93,26 @@
                         distanceToUser = calculateDistance(virtualLat, virtualLon, userLat, userLon);
                     }
 
-                    let nextLat, nextLon, direction;
-                    // Menghindari lokasi pengguna
+                    let nextLat, nextLon;
+
+                    // Jika terlalu dekat dengan lokasi pengguna
                     if (distanceToUser < 0.02) {
                         do {
-                            [nextLat, nextLon, direction] = randomDirection(lastDirection);
+                            [nextLat, nextLon, lastMoveDirection] = randomDirection();
                             nextLat = virtualLat + nextLat;
                             nextLon = virtualLon + nextLon;
                         } while (calculateDistance(nextLat, nextLon, userLat, userLon) < 0.02 || !isInsideGeofence(nextLat, nextLon));
                     } else {
                         // Pilih arah acak
-                        [nextLat, nextLon, direction] = randomDirection(lastDirection);
+                        [nextLat, nextLon] = randomDirection();
                         nextLat = virtualLat + nextLat;
                         nextLon = virtualLon + nextLon;
 
+                        // Pastikan berada dalam batas geofencing
                         if (isInsideGeofence(nextLat, nextLon)) {
                             virtualLat = nextLat;
                             virtualLon = nextLon;
-                            lastDirection = direction;
+                            lastDirection = lastMoveDirection;
                             idleCounter = 0; // Reset counter idle saat bergerak
                         } else {
                             idleCounter++;
@@ -184,8 +177,7 @@
 
         // Mendengarkan perubahan lokasi virtual dari Firebase untuk perangkat lain
         function listenForVirtualLocations() {
-            const otherDeviceID = 'device2'; // ID perangkat lain yang akan dipantau
-            const virtualLocationRef = ref(database, `devices/${otherDeviceID}/virtualLocation`);
+            const virtualLocationRef = ref(database, `devices/virtualLocation`);
             onValue(virtualLocationRef, (snapshot) => {
                 const virtualLocation = snapshot.val();
                 if (virtualLocation) {
@@ -194,7 +186,7 @@
                         map.removeLayer(window.otherDeviceMarker);
                     }
                     window.otherDeviceMarker = L.marker([latitude, longitude]).addTo(map);
-                    window.otherDeviceMarker.bindPopup("Titik Virtual Perangkat 2").openPopup();
+                    window.otherDeviceMarker.bindPopup("Titik Virtual Perangkat Lain").openPopup();
                 }
             });
         }
