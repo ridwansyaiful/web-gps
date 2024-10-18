@@ -5,207 +5,92 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistem Lapor</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <style>
-        /* Atur tinggi peta */
         #map {
-            height: 400px; /* Atur tinggi peta */
-            width: 100%; /* Lebar penuh */
+            height: 100vh; /* Tinggi peta */
         }
     </style>
-    <script type="module">
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-app.js';
-        import { getDatabase, ref, set, remove, onValue, get } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-database.js';
-
-        // Konfigurasi Firebase Anda
-        const firebaseConfig = {
-            apiKey: "AIzaSyDgPYGXqbBXt1NayhNB5M-8mjXfGKrOzWM",
-            authDomain: "coba-accf3.firebaseapp.com",
-            databaseURL: "https://coba-accf3-default-rtdb.asia-southeast1.firebasedatabase.app/",
-            projectId: "coba-accf3",
-            storageBucket: "coba-accf3.appspot.com",
-            messagingSenderId: "171764982868",
-            appId: "1:171764982868:web:19c716f6617667514679c1"
-        };
-
-        // Inisialisasi Firebase
-        const app = initializeApp(firebaseConfig);
-        const database = getDatabase(app);
-
-        let deviceID = 'device1'; // Nama perangkat awal
-        let isFirstLoad = true; // Flag untuk menandakan apakah peta baru pertama kali dimuat
-
-        // Fungsi untuk mendapatkan lokasi
-        function getLocation() {
-            console.log("Meminta lokasi...");
-            if (navigator.geolocation) {
-                navigator.geolocation.watchPosition(showPosition, showError, {
-                    enableHighAccuracy: true
-                });
-            } else {
-                alert("Geolocation tidak didukung oleh browser ini.");
-            }
-        }
-
-        function showPosition(position) {
-            const lat = position.coords.latitude;
-            const lon = position.coords.longitude;
-
-            // Jika pengguna memberikan izin lokasi
-            if (position.coords.accuracy) {
-                // Kirim lokasi ke Firebase
-                const locationRef = ref(database, `devices/${deviceID}`);
-                set(locationRef, {
-                    latitude: lat,
-                    longitude: lon,
-                    timestamp: Date.now()
-                });
-
-                // Tampilkan lokasi di peta dengan ikon hijau
-                updateMap(lat, lon, true); // true untuk ikon hijau
-                
-                // Hapus pesan penolakan izin (jika ada)
-                const notificationRef = ref(database, `notifications/${deviceID}`);
-                remove(notificationRef);
-            }
-        }
-
-        function showError(error) {
-            const notificationRef = ref(database, `notifications/${deviceID}`);
-            console.log("Error mendapatkan lokasi:", error); // Log kesalahan untuk debug
-
-            // Jika izin lokasi ditolak
-            if (error.code === error.PERMISSION_DENIED) {
-                // Tampilkan lokasi lokal pada device sendiri (tidak dikirim ke Firebase)
-                useLocalLocation();
-                set(notificationRef, {
-                    message: "Target tidak izinkan lokasi"
-                });
-            } else {
-                alert("Gagal mendapatkan lokasi.");
-            }
-        }
-
-        // Fungsi untuk menggunakan lokasi lokal (tidak dikirim ke Firebase)
-        function useLocalLocation() {
-            // Coba mendapatkan posisi GPS lokal
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(showLocalPosition, (error) => {
-                    console.log("Gagal mendapatkan lokasi lokal:", error);
-                    alert("Gagal mendapatkan lokasi lokal.");
-                });
-            }
-        }
-
-        function showLocalPosition(position) {
-            const lat = position.coords.latitude;
-            const lon = position.coords.longitude;
-
-            // Tampilkan lokasi lokal di peta dengan ikon merah
-            updateMap(lat, lon, false); // false untuk ikon merah
-        }
-
-        // Fungsi untuk mencari ID perangkat unik yang tersedia
-        async function findAvailableDeviceID() {
-            let i = 1;
-            let found = false;
-            while (!found) {
-                const deviceRef = ref(database, `devices/device${i}`);
-                const snapshot = await get(deviceRef);
-                if (!snapshot.exists()) {
-                    deviceID = `device${i}`;
-                    found = true;
-                }
-                i++;
-            }
-            console.log("ID Perangkat yang dipakai:", deviceID);
-        }
-
-        // Lokasi default yang akan digunakan untuk geofencing (empat sudut area)
-        const defaultLocations = [
-            { name: "lokasi a", coordinates: "-7.974107, 110.335574" }, // Lokasi A (sudut 1)
-            { name: "lokasi b", coordinates: "-7.974263, 110.331069" }, // Lokasi B (sudut 2)
-            { name: "lokasi c", coordinates: "-7.977164, 110.330796" }, // Lokasi C (sudut 3)
-            { name: "lokasi d", coordinates: "-7.975760, 110.334861" }  // Lokasi D (sudut 4)
-        ];
-
-        // Lokasi tambahan di dalam area geofencing (untuk ikon rumah)
-        const additionalLocations = [
-            { name: "Rumah 1", coordinates: "-7.975000, 110.334000" },
-            { name: "Rumah 2", coordinates: "-7.976000, 110.331500" },
-            { name: "Rumah 3", coordinates: "-7.975500, 110.333000" },
-            { name: "Rumah 4", coordinates: "-7.976500, 110.335000" }
-        ];
-
-        // Inisialisasi peta
-        const map = L.map('map'); 
-
-        // Menambahkan layer peta dari OpenStreetMap
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19,
-        }).addTo(map);
-
-        // Menghitung bounding box (geofencing) dari empat sudut lokasi
-        const bounds = defaultLocations.map(location => {
-            const [lat, lon] = location.coordinates.split(',').map(coord => parseFloat(coord.trim()));
-            return [lat, lon];
-        });
-
-        // Menambahkan area geofencing tanpa marker dan garis, serta dengan transparansi lebih tinggi
-        L.polygon(bounds, { 
-            color: '#0000FF', // Warna biru muda
-            weight: 0, // Menghapus garis luar
-            fillOpacity: 0.05 // Transparansi lebih tinggi
-        }).addTo(map);
-
-        // Menambahkan ikon rumah ke lokasi tambahan
-        const houseIcon = L.icon({
-            iconUrl: 'https://upload.wikimedia.org/wikipedia/commons/5/5c/House_icon.svg', // Ikon rumah
-            iconSize: [30, 30], // Ukuran ikon
-            iconAnchor: [15, 30], // Titik yang menunjukkan posisi ikon
-            popupAnchor: [0, -30] // Titik yang menunjukkan posisi popup
-        });
-
-        additionalLocations.forEach(location => {
-            const [lat, lon] = location.coordinates.split(',').map(coord => parseFloat(coord.trim()));
-            L.marker([lat, lon], { icon: houseIcon })
-                .addTo(map)
-                .bindPopup(location.name);
-        });
-
-        // Fungsi untuk menampilkan lokasi dari Firebase (lokasi pengguna)
-        function updateMap(lat, lon, isAuthorized) {
-            // Menghapus marker lama jika ada
-            if (window.userMarker) {
-                map.removeLayer(window.userMarker);
-            }
-
-            // Menentukan ikon berdasarkan apakah lokasi diizinkan atau tidak
-            const userIcon = L.icon({
-                iconUrl: isAuthorized
-                    ? 'https://cdn-icons-png.flaticon.com/512/7276/727606.png' // Ikon hijau untuk izin
-                    : 'https://cdn-icons-png.flaticon.com/512/1803/18034297.png', // Ikon merah untuk lokal
-                iconSize: [30, 30], // Ukuran ikon
-                iconAnchor: [15, 30], // Titik yang menunjukkan posisi ikon
-                popupAnchor: [0, -30] // Titik yang menunjukkan posisi popup
-            });
-
-            // Tambahkan marker pengguna ke peta
-            window.userMarker = L.marker([lat, lon], { icon: userIcon }).addTo(map);
-            
-            // Set zoom dan view hanya pada pertama kali memuat peta
-            if (isFirstLoad) {
-                map.setView([lat, lon], 15); // Atur zoom level sesuai lokasi
-                isFirstLoad = false; // Set flag ke false setelah peta pertama kali dimuat
-            }
-        }
-
-        // Cari deviceID yang tersedia dan jalankan fungsi untuk mendapatkan lokasi
-        findAvailableDeviceID().then(() => getLocation());
-    </script>
 </head>
 <body>
-    <h1>Sistem Lapor</h1>
-    <div id="map"></div>
+
+<div id="map"></div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script>
+    // Inisialisasi peta
+    const map = L.map('map').setView([-7.975187, 110.333603], 13); // Koordinat awal
+
+    // Layer peta dari OpenStreetMap
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '© OpenStreetMap'
+    }).addTo(map);
+
+    // Ikon untuk lokasi dengan izin
+    const userIcon = L.icon({
+        iconUrl: 'https://github.com/ridwansyaiful/web-gps/raw/main/placeholder.png', // Ikon lokasi izin
+        iconSize: [30, 30], // Ukuran ikon
+        iconAnchor: [15, 30], // Titik jangkar ikon
+        popupAnchor: [0, -30] // Titik jangkar popup
+    });
+
+    // Ikon untuk lokasi lokal
+    const localIcon = L.icon({
+        iconUrl: 'https://github.com/ridwansyaiful/web-gps/raw/main/placeholder%20(1).png', // Ikon lokasi lokal
+        iconSize: [30, 30], // Ukuran ikon
+        iconAnchor: [15, 30], // Titik jangkar ikon
+        popupAnchor: [0, -30] // Titik jangkar popup
+    });
+
+    // Lokasi default untuk geofencing
+    const defaultLocations = [
+        { name: "lokasi a", coordinates: [-7.974107, 110.335574] }, // Sudut 1
+        { name: "lokasi b", coordinates: [-7.974263, 110.331069] }, // Sudut 2
+        { name: "lokasi c", coordinates: [-7.977164, 110.330796] }, // Sudut 3
+        { name: "lokasi d", coordinates: [-7.975760, 110.334861] }  // Sudut 4
+    ];
+
+    // Menambahkan marker untuk lokasi default
+    defaultLocations.forEach(location => {
+        L.marker(location.coordinates, { icon: localIcon }).addTo(map)
+            .bindPopup(location.name)
+            .openPopup();
+    });
+
+    // Fungsi untuk menampilkan lokasi
+    function displayLocation(hasPermission, latitude, longitude) {
+        const iconToUse = hasPermission ? userIcon : localIcon; // Pilih ikon berdasarkan izin
+
+        const marker = L.marker([latitude, longitude], { icon: iconToUse }).addTo(map);
+        marker.bindPopup("Lokasi Anda").openPopup();
+        
+        if (hasPermission) {
+            // Jika izin diberikan, kirim lokasi ke Firebase atau lakukan tindakan lainnya
+            console.log("Lokasi dikirim ke Firebase:", latitude, longitude);
+        }
+    }
+
+    // Mendapatkan izin lokasi
+    navigator.geolocation.getCurrentPosition(
+        (position) => {
+            // Izin diberikan
+            displayLocation(true, position.coords.latitude, position.coords.longitude);
+            map.setView([position.coords.latitude, position.coords.longitude], 13); // Set view peta ke lokasi pengguna
+        },
+        (error) => {
+            // Izin ditolak, menggunakan lokasi lokal
+            const localLat = -7.975187; // Ganti dengan koordinat lokal Anda
+            const localLon = 110.333603; // Ganti dengan koordinat lokal Anda
+            displayLocation(false, localLat, localLon);
+            map.setView([localLat, localLon], 13); // Set view peta ke lokasi lokal
+        }
+    );
+
+    // Untuk zoom yang fleksibel saat peta digeser
+    map.on('zoomend', function() {
+        // Tambahkan logika di sini jika perlu saat zoom
+    });
+</script>
+
 </body>
 </html>
