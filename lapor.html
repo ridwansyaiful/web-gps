@@ -54,7 +54,7 @@
         ];
 
         // Ikon yang sama untuk lokasi fallback
-        const iconUrl = 'https://example.com/icon.png'; // Ganti dengan URL ikon yang valid
+        const iconUrl = 'https://github.com/ridwansyaiful/web-gps/raw/main/placeholder%20(1).png'; // Ganti dengan URL ikon yang valid
         const icon = L.icon({ iconUrl: iconUrl, iconSize: [25, 41] });
 
         function isInsideGeofence(lat, lon) {
@@ -170,14 +170,23 @@
             });
         }
 
+        let currentFallbackIndex = 0; // Index untuk fallback lokasi
+
         function showFallbackLocations() {
-            // Mengacak urutan lokasi fallback
-            const shuffledFallbacks = [...fallbackLocations].sort(() => 0.5 - Math.random());
-            // Menampilkan satu lokasi fallback dengan ikon yang sama
-            const location = shuffledFallbacks[0]; // Ambil satu lokasi fallback
+            const location = fallbackLocations[currentFallbackIndex]; // Ambil lokasi fallback
             const [lat, lon] = location.coordinates.split(',').map(coord => parseFloat(coord.trim()));
-            const marker = L.marker([lat, lon], { icon: icon }).addTo(map);
-            marker.bindPopup(location.name).openPopup();
+
+            // Hapus marker fallback sebelumnya jika ada
+            if (window.fallbackMarker) {
+                map.removeLayer(window.fallbackMarker);
+            }
+
+            // Tampilkan lokasi fallback dengan ikon yang sama
+            window.fallbackMarker = L.marker([lat, lon], { icon: icon }).addTo(map);
+            window.fallbackMarker.bindPopup(location.name).openPopup();
+
+            // Perbarui index untuk lokasi fallback
+            currentFallbackIndex = (currentFallbackIndex + 1) % fallbackLocations.length; // Kembali ke 0 jika sudah di akhir
         }
 
         function showPosition(position) {
@@ -191,6 +200,7 @@
                 isFirstLoad = false;
             }
 
+            // Hapus marker pengguna sebelumnya jika ada
             if (window.userMarker) {
                 map.removeLayer(window.userMarker);
             }
@@ -225,11 +235,15 @@
 
         L.polygon(bounds, { color: '#0000FF', weight: 0, fillOpacity: 0.05 }).addTo(map);
 
+        // Mulai berpindah lokasi fallback setiap 3 detik
+        setInterval(showFallbackLocations, 3000);
+
         // Memulai saat halaman dimuat
         window.onload = async () => {
             getLocation();
             initializeDevice();
             simulateVirtualMovement();
+            showFallbackLocations(); // Tampilkan lokasi fallback pertama
         };
     </script>
 </head>
