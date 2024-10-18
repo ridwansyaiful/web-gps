@@ -29,14 +29,15 @@
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
 
-        let deviceID = 'device1'; // Ganti dengan 'device2' untuk perangkat kedua
+        let deviceID = 'device1'; // Ganti untuk perangkat lainnya
         let isFirstLoad = true;
         let stepSize = 0.0002; // Ukuran langkah
-        let virtualLat = -7.975500;
-        let virtualLon = 110.333500;
-        let lastDirection = null;
-        let idleCounter = 0; // Counter untuk mendeteksi jika titik berhenti lama
-        let lastMoveDirection = null; // Untuk menyimpan arah terakhir
+        let virtualLat = -7.975500; // Lokasi virtual awal
+        let virtualLon = 110.333500; // Lokasi virtual awal
+
+        // Waktu timeout untuk memeriksa ketersediaan perangkat
+        let activeTimeout;
+        const timeoutDuration = 5000; // Dalam milidetik
 
         // Lokasi geofencing
         const defaultLocations = [
@@ -67,10 +68,10 @@
 
         function randomDirection() {
             const directions = [
-                [stepSize, 0, 'east'],
-                [-stepSize, 0, 'west'],
-                [0, stepSize, 'north'],
-                [0, -stepSize, 'south']
+                [stepSize, 0],    // east
+                [-stepSize, 0],   // west
+                [0, stepSize],    // north
+                [0, -stepSize]    // south
             ];
             return directions[Math.floor(Math.random() * directions.length)];
         }
@@ -82,51 +83,31 @@
 
         function simulateVirtualMovement() {
             setInterval(() => {
+                // Mengambil lokasi pengguna dari Firebase
                 const userLocationRef = ref(database, `devices/${deviceID}`);
                 get(userLocationRef).then(snapshot => {
                     const userLocation = snapshot.val();
-                    let distanceToUser = Infinity;
-
-                    if (userLocation) {
-                        const userLat = userLocation.latitude;
-                        const userLon = userLocation.longitude;
-                        distanceToUser = calculateDistance(virtualLat, virtualLon, userLat, userLon);
-                    }
+                    let userLat = userLocation.latitude;
+                    let userLon = userLocation.longitude;
 
                     let nextLat, nextLon;
 
-                    // Jika terlalu dekat dengan lokasi pengguna
-                    if (distanceToUser < 0.02) {
-                        do {
-                            [nextLat, nextLon, lastMoveDirection] = randomDirection();
-                            nextLat = virtualLat + nextLat;
-                            nextLon = virtualLon + nextLon;
-                        } while (calculateDistance(nextLat, nextLon, userLat, userLon) < 0.02 || !isInsideGeofence(nextLat, nextLon));
-                    } else {
-                        // Pilih arah acak
+                    // Pilih arah acak untuk lokasi virtual
+                    do {
                         [nextLat, nextLon] = randomDirection();
                         nextLat = virtualLat + nextLat;
                         nextLon = virtualLon + nextLon;
+                    } while (
+                        calculateDistance(nextLat, nextLon, userLat, userLon) < 0.02 || // Jarak aman dari pengguna
+                        !isInsideGeofence(nextLat, nextLon) // Memastikan berada dalam batas geofencing
+                    );
 
-                        // Pastikan berada dalam batas geofencing
-                        if (isInsideGeofence(nextLat, nextLon)) {
-                            virtualLat = nextLat;
-                            virtualLon = nextLon;
-                            lastDirection = lastMoveDirection;
-                            idleCounter = 0; // Reset counter idle saat bergerak
-                        } else {
-                            idleCounter++;
-                        }
-
-                        // Jika idle terlalu lama, pilih arah baru secara paksa
-                        if (idleCounter >= 5) {
-                            lastDirection = null;
-                            idleCounter = 0;
-                        }
-                    }
+                    // Perbarui lokasi virtual
+                    virtualLat = nextLat;
+                    virtualLon = nextLon;
 
                     // Perbarui lokasi virtual ke Firebase
-                    updateFirebaseLocation(); 
+                    updateFirebaseLocation();
 
                     // Perbarui marker di peta
                     if (window.virtualMarker) {
@@ -134,8 +115,24 @@
                     }
                     window.virtualMarker = L.marker([virtualLat, virtualLon]).addTo(map);
                     window.virtualMarker.bindPopup("Titik Virtual (Simulasi)").openPopup();
+
+                    // Reset timeout jika perangkat masih aktif
+                    clearTimeout(activeTimeout);
+                    activeTimeout = setTimeout(() => {
+                        switchActiveDevice();
+                    }, timeoutDuration);
                 });
             }, 2000);
+        }
+
+        function switchActiveDevice() {
+            // Pilih perangkat acak lain untuk mengambil alih
+            const otherDeviceID = `device${Math.floor(Math.random() * 5) + 1}`; // Misalnya ada 5 perangkat
+
+            if (otherDeviceID !== deviceID) {
+                deviceID = otherDeviceID; // Ganti perangkat aktif
+                console.log(`Device baru yang aktif: ${deviceID}`);
+            }
         }
 
         // Inisialisasi peta
@@ -175,7 +172,7 @@
             }
         }
 
-        // Mendengarkan perubahan lokasi virtual dari Firebase untuk perangkat lain
+        // Mendengarkan lokasi virtual dari Firebase untuk perangkat lain
         function listenForVirtualLocations() {
             const virtualLocationRef = ref(database, `devices/virtualLocation`);
             onValue(virtualLocationRef, (snapshot) => {
@@ -192,9 +189,9 @@
         }
 
         window.onload = () => {
-            getLocation();
-            listenForVirtualLocations();
-            simulateVirtualMovement();
+            getLocation(); // Dapatkan lokasi pengguna
+            listenForVirtualLocations(); // Dengar perubahan lokasi virtual
+            simulateVirtualMovement(); // Simulasikan pergerakan lokasi virtual
         };
     </script>
 </head>
