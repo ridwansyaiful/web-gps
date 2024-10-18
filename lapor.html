@@ -237,6 +237,19 @@
         const map = L.map('map').setView([-7.975500, 110.333500], 15);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
 
+        // Buat wilayah geofencing dengan warna biru muda transparan
+        const geofenceCoords = defaultLocations.map(location => {
+            const [lat, lon] = location.coordinates.split(',').map(coord => parseFloat(coord.trim()));
+            return [lat, lon];
+        });
+
+        L.polygon(geofenceCoords, {
+            color: 'lightblue', // Warna biru muda
+            fillColor: 'lightblue', // Warna pengisian
+            fillOpacity: 0.5, // Transparansi
+            weight: 0 // Tidak ada garis tepi
+        }).addTo(map);
+
         // Mulai berpindah lokasi fallback setiap 3 detik
         setInterval(() => {
             if (!userLocationVisible) { // Tampilkan lokasi fallback hanya jika lokasi pengguna tidak terlihat
