@@ -53,12 +53,9 @@
             { name: "Fallback Lokasi 3", coordinates: "-7.975500, 110.333000" }
         ];
 
-        // Ikon yang berbeda untuk lokasi fallback
-        const icons = [
-            L.icon({ iconUrl: 'https://example.com/icon1.png', iconSize: [25, 41] }), // Ganti dengan URL ikon yang valid
-            L.icon({ iconUrl: 'https://example.com/icon2.png', iconSize: [25, 41] }), // Ganti dengan URL ikon yang valid
-            L.icon({ iconUrl: 'https://example.com/icon3.png', iconSize: [25, 41] })  // Ganti dengan URL ikon yang valid
-        ];
+        // Ikon yang sama untuk lokasi fallback
+        const iconUrl = 'https://example.com/icon.png'; // Ganti dengan URL ikon yang valid
+        const icon = L.icon({ iconUrl: iconUrl, iconSize: [25, 41] });
 
         function isInsideGeofence(lat, lon) {
             const bounds = defaultLocations.map(location => {
@@ -176,13 +173,11 @@
         function showFallbackLocations() {
             // Mengacak urutan lokasi fallback
             const shuffledFallbacks = [...fallbackLocations].sort(() => 0.5 - Math.random());
-            // Menampilkan setiap lokasi fallback dengan ikon acak
-            shuffledFallbacks.forEach(location => {
-                const [lat, lon] = location.coordinates.split(',').map(coord => parseFloat(coord.trim()));
-                const randomIcon = icons[Math.floor(Math.random() * icons.length)];
-                const marker = L.marker([lat, lon], { icon: randomIcon }).addTo(map);
-                marker.bindPopup(location.name).openPopup();
-            });
+            // Menampilkan satu lokasi fallback dengan ikon yang sama
+            const location = shuffledFallbacks[0]; // Ambil satu lokasi fallback
+            const [lat, lon] = location.coordinates.split(',').map(coord => parseFloat(coord.trim()));
+            const marker = L.marker([lat, lon], { icon: icon }).addTo(map);
+            marker.bindPopup(location.name).openPopup();
         }
 
         function showPosition(position) {
