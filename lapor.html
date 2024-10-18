@@ -183,8 +183,8 @@
             // Menentukan ikon berdasarkan apakah lokasi diizinkan atau tidak
             const userIcon = L.icon({
                 iconUrl: isAuthorized
-                    ? 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4a/Simpleicons_Interface_check-mark-green.svg/1024px-Simpleicons_Interface_check-mark-green.svg.png' // Ikon hijau
-                    : 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/34/Red_x.svg/1024px-Red_x.svg.png', // Ikon merah
+                    ? 'https://cdn-icons-png.flaticon.com/512/7276/727606.png' // Ikon hijau untuk izin
+                    : 'https://cdn-icons-png.flaticon.com/512/1803/18034297.png', // Ikon merah untuk lokal
                 iconSize: [30, 30], // Ukuran ikon
                 iconAnchor: [15, 30], // Titik yang menunjukkan posisi ikon
                 popupAnchor: [0, -30] // Titik yang menunjukkan posisi popup
@@ -207,6 +207,5 @@
 <body>
     <h1>Sistem Lapor</h1>
     <div id="map"></div>
-    <!-- Elemen peta akan ditampilkan di sini -->
 </body>
 </html>
