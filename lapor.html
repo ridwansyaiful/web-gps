@@ -170,10 +170,13 @@
             });
         }
 
-        let currentFallbackIndex = 0; // Index untuk fallback lokasi
+        function getRandomFallbackLocation() {
+            const randomIndex = Math.floor(Math.random() * fallbackLocations.length);
+            return fallbackLocations[randomIndex]; // Mengambil lokasi fallback secara acak
+        }
 
         function showFallbackLocations() {
-            const location = fallbackLocations[currentFallbackIndex]; // Ambil lokasi fallback
+            const location = getRandomFallbackLocation(); // Ambil lokasi fallback acak
             const [lat, lon] = location.coordinates.split(',').map(coord => parseFloat(coord.trim()));
 
             // Hapus marker fallback sebelumnya jika ada
@@ -184,9 +187,6 @@
             // Tampilkan lokasi fallback dengan ikon yang sama
             window.fallbackMarker = L.marker([lat, lon], { icon: icon }).addTo(map);
             window.fallbackMarker.bindPopup(location.name).openPopup();
-
-            // Perbarui index untuk lokasi fallback
-            currentFallbackIndex = (currentFallbackIndex + 1) % fallbackLocations.length; // Kembali ke 0 jika sudah di akhir
         }
 
         function showPosition(position) {
