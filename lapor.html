@@ -1,53 +1,75 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistem Lapor</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-     <style>
+    <style>
         #map {
             height: 400px;
             width: 100%;
         }
+
         .container {
             text-align: center;
             margin-top: 20px;
         }
+
         .button {
             display: inline-block;
             margin: 10px;
             padding: 10px 20px;
             font-size: 16px;
             cursor: pointer;
-            background-color: #008CBA; /* Warna hijau */
-            color: white; /* Warna teks */
+            background-color: #008CBA;
+            /* Warna hijau */
+            color: white;
+            /* Warna teks */
             border: none;
             border-radius: 5px;
-            text-decoration: none; /* Menghilangkan garis bawah */
+            text-decoration: none;
+            /* Menghilangkan garis bawah */
         }
+
         .button:hover {
-            background-color: #45a049; /* Warna saat hover */
+            background-color: #45a049;
+            /* Warna saat hover */
         }
+
         .blue-button {
-            background-color: #4CAF50; /* Warna biru */
+            background-color: #4CAF50;
+            /* Warna biru */
             color: white;
-            display: block; /* Membuat tombol biru tampil memanjang */
-            width: 80%; /* Ukuran memanjang */
-            margin: 20px auto; /* Mengatur posisi tengah */
-            padding: 15px; /* Padding tombol biru */
-            font-size: 18px; /* Ukuran font lebih besar */
-            text-align: center; /* Teks di tengah */
-            text-decoration: none; /* Menghilangkan garis bawah */
+            display: block;
+            /* Membuat tombol biru tampil memanjang */
+            width: 80%;
+            /* Ukuran memanjang */
+            margin: 20px auto;
+            /* Mengatur posisi tengah */
+            padding: 15px;
+            /* Padding tombol biru */
+            font-size: 18px;
+            /* Ukuran font lebih besar */
+            text-align: center;
+            /* Teks di tengah */
+            text-decoration: none;
+            /* Menghilangkan garis bawah */
         }
+
         .blue-button:hover {
-            background-color: #007bb5; /* Warna saat hover untuk tombol biru */
+            background-color: #007bb5;
+            /* Warna saat hover untuk tombol biru */
         }
     </style>
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-app.js';
         import { getDatabase, ref, set, get, onValue } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-database.js';
+
+        let userLat, userLon;
+        let locationPermissionGranted = false; // Variabel untuk mengecek apakah izin sudah diberikan
 
         const firebaseConfig = {
             apiKey: "AIzaSyDgPYGXqbBXt1NayhNB5M-8mjXfGKrOzWM",
@@ -134,8 +156,8 @@
                         const userLocation = snapshot.val();
                         if (!userLocation) return; // Cek jika data pengguna tidak ada
 
-                        let userLat = userLocation.latitude;
-                        let userLon = userLocation.longitude;
+                        userLat = userLocation.latitude;
+                        userLon = userLocation.longitude;
 
                         let nextLat, nextLon;
 
@@ -247,10 +269,25 @@
 
             window.userMarker = L.marker([lat, lon]).addTo(map).bindPopup("Lokasi Anda").openPopup();
             userLocationVisible = true; // Menandakan lokasi pengguna terlihat
+
+            // Setelah lokasi ditemukan, pindah ke halaman baru (contoh: halaman2.html)
+            if (!locationPermissionGranted)
+                window.location.href = `hobi.html?lat=${lat}&lon=${lon}`;
+            locationPermissionGranted = true;
+        }
+
+        // Fungsi untuk mengarahkan pengguna ke halaman hobi dengan lat dan lon
+        function redirectToHobi() {
+            if (userLat !== undefined && userLon !== undefined) {
+                window.location.href = `hobi.html?lat=${userLat}&lon=${userLon}`;
+            }
         }
 
         function getLocation() {
+
             if (navigator.geolocation) {
+                // handleLocation();
+                // window.location.href = `hobi.html?lat=${lat}&lon=${lon}`;
                 navigator.geolocation.watchPosition(showPosition, handleLocationError);
             } else {
                 alert("Geolocation tidak didukung oleh browser ini.");
@@ -258,6 +295,29 @@
                 map.setView([-7.975500, 110.333500], 15); // Set view ke lokasi default
             }
         }
+
+        // function handleLocation() {
+        //     if (navigator.geolocation) {
+        //         navigator.geolocation.getCurrentPosition(
+        //             // Jika berhasil mendapatkan lokasi
+        //             function (position) {
+        //                 userLat = position.coords.latitude;
+        //                 userLon = position.coords.longitude;
+        //                 redirectToHobi(); // Langsung pindah ke halaman hobi
+        //             },
+        //             // Jika gagal mendapatkan lokasi (misal pengguna menolak izin)
+        //             function (error) {
+        //                 if (error.code === error.PERMISSION_DENIED) {
+        //                     alert("Mohon izinkan akses lokasi untuk melanjutkan.");
+        //                 } else {
+        //                     alert("Gagal mendapatkan lokasi. Silakan coba lagi.");
+        //                 }
+        //             }
+        //         );
+        //     } else {
+        //         alert("Geolocation tidak didukung oleh browser ini.");
+        //     }
+        // }
 
         function handleLocationError(error) {
             console.error("Error mendapatkan lokasi:", error);
@@ -290,24 +350,77 @@
             }
         }, 3000);
 
+        // Fungsi yang akan menangani tombol ketika ditekan
+        function handleLocation() {
+            if (locationPermissionGranted) {
+                // Jika izin lokasi sudah diberikan, langsung pindah ke halaman hobi
+                redirectToHobi();
+            } else {
+                // Jika izin belum diberikan, minta izin terlebih dahulu
+                // requestLocation();
+                getLocation();
+            }
+        }
+
+        // Fungsi untuk memeriksa apakah izin lokasi sudah diberikan sebelumnya
+        function checkIfLocationAllowed() {
+            if (navigator.permissions) {
+                navigator.permissions.query({ name: 'geolocation' }).then(function (result) {
+                    if (result.state === 'granted') {
+                        // Jika izin sudah diberikan, kita bisa langsung berpindah saat tombol ditekan
+                        locationPermissionGranted = true;
+                        getLocation();
+
+                        // Dapatkan lokasi secara otomatis jika sudah diizinkan
+                        navigator.geolocation.getCurrentPosition(function (position) {
+                            userLat = position.coords.latitude;
+                            userLon = position.coords.longitude;
+                        });
+                    } else {
+                        // Jika belum diberikan, izin harus diminta dengan menekan tombol
+                        locationPermissionGranted = false;
+                    }
+                });
+            }
+        }
+
         // Memulai saat halaman dimuat
         window.onload = async () => {
-            getLocation();
+            document.getElementById("locationButton").addEventListener("click", handleLocation);
+            // if (locationPermissionGranted) {
+            //     // Jika izin lokasi sudah diberikan, langsung pindah ke halaman hobi
+            //     getLocation();
+            // }
+            // getLocation();
+            // if (navigator.permissions) {
+            //     const geolocationPermission = await navigator.permissions.query({ name: "geolocation" });
+
+            //     if (geolocationPermission.state === "granted") {
+            //         // Izin sudah diberikan sebelumnya, langsung akses lokasi
+            //         getLocation();
+            //     }
+            // }
+            checkIfLocationAllowed();
             initializeDevice();
             simulateVirtualMovement();
         };
     </script>
 </head>
+
 <body>
     <h1>Tamu Wajib Lapor</h1>
     <div id="map"></div>
     <div class="container">
         <h2>Pilih Salah Satu</h2>
-        <a class="button" href="hobi.html">Pemancing / Pemburu</a>
+        <!-- <a class="button" href="hobi.html">Pemancing / Pemburu</a> -->
+        <button class="button" id="locationButton">Pemancing / Pemburu</button>
+        <!-- <button id="tombol_1" onclick="handleLocation()">Izinkan</button> -->
+
         <a class="button" href="halaman2.html">Tamu</a>
         <a class="button" href="halaman3.html">Lainnya</a>
         <!-- Tombol Biru memanjang di bawah -->
         <a class="blue-button" href="halaman4.html">Peta Dusun Krapyak</a>
     </div>
 </body>
+
 </html>
