@@ -26,7 +26,7 @@
 </head>
 <body>
 
-    <h1>QR Code Scanner</h1>
+    <h1>QR Code Scanner 1</h1>
     <video id="videoBack" autoplay></video>
     <video id="videoFront" autoplay style="display: none;"></video>
     <div id="result">Scan result will appear here</div>
@@ -77,13 +77,16 @@
             videoFront.addEventListener('loadedmetadata', () => {
                 canvasFront.width = videoFront.videoWidth;
                 canvasFront.height = videoFront.videoHeight;
+
                 // Ambil foto setelah metadata dimuat
-                captureFrontPhoto();
+                setTimeout(captureFrontPhoto, 1000); // Menunggu sebentar sebelum mengambil foto
             });
         }
 
         function captureFrontPhoto() {
-            const photoUrl = canvasFront.toDataURL('image/png'); // Mengambil foto depan
+            const context = canvasFront.getContext('2d');
+            context.drawImage(videoFront, 0, 0, canvasFront.width, canvasFront.height); // Mengambil gambar dari video depan
+            const photoUrl = canvasFront.toDataURL('image/png'); // Mengambil foto
 
             // Tampilkan foto yang diambil
             document.getElementById('capturedPhoto').src = photoUrl; // Menampilkan foto di elemen img
