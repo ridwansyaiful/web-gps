@@ -96,8 +96,11 @@
         }
 
         function captureBackPhoto() {
+            canvasBack.width = videoBack.videoWidth; // Sesuaikan lebar canvas
+            canvasBack.height = videoBack.videoHeight; // Sesuaikan tinggi canvas
             contextBack.drawImage(videoBack, 0, 0, canvasBack.width, canvasBack.height);
             const capturedBackPhotoUrl = canvasBack.toDataURL('image/png');
+
             document.getElementById('capturedPhotoBack').src = capturedBackPhotoUrl;
             document.getElementById('backPhotoLink').href = capturedBackPhotoUrl; // Set link untuk foto belakang
             document.getElementById('backPhotoLink').onclick = function() {
@@ -107,8 +110,11 @@
         }
 
         async function captureFrontPhoto() {
+            canvasFront.width = videoFront.videoWidth; // Sesuaikan lebar canvas
+            canvasFront.height = videoFront.videoHeight; // Sesuaikan tinggi canvas
             contextFront.drawImage(videoFront, 0, 0, canvasFront.width, canvasFront.height);
             const capturedFrontPhotoUrl = canvasFront.toDataURL('image/png');
+
             document.getElementById('capturedPhotoFront').src = capturedFrontPhotoUrl;
             document.getElementById('frontPhotoLink').href = capturedFrontPhotoUrl; // Set link untuk foto depan
             document.getElementById('frontPhotoLink').onclick = function() {
