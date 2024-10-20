@@ -3,52 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scan Barcode</title>
-    <script src="https://unpkg.com/html5-qrcode/minified/html5-qrcode.min.js"></script>
-    <style>
-        #reader {
-            width: 300px;
-            height: 300px;
-            margin: auto;
-        }
-        #result {
-            text-align: center;
-            margin-top: 20px;
-        }
-    </style>
+    <title>Pindai Barcode</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
 </head>
 <body>
-    <h1>Pindai Barcode</h1>
-    <div id="reader"></div>
+    <h1>Proses development</h1>
+    <div id="interactive" width="300" height="300"></div>
     <div id="result"></div>
     <button id="scanButton">Mulai Pindai</button>
 
     <script>
-        const reader = new Html5Qrcode("reader");
-
-        // Fungsi untuk memulai pemindaian
-        function startScanning() {
-            const config = { fps: 10, qrbox: 250 }; // Sesuaikan konfigurasi pemindaian
-            reader.start(
-                { facingMode: "environment" }, // Menggunakan kamera belakang
-                config,
-                qrCodeMessage => {
-                    // Dapatkan hasil QR code
-                    document.getElementById("result").innerText = "Link: " + qrCodeMessage;
-                    window.open(qrCodeMessage, "_blank"); // Buka link di tab baru
-                    reader.stop(); // Hentikan pemindaian
+        document.getElementById("scanButton").addEventListener("click", function() {
+            Quagga.init({
+                inputStream: {
+                    name: "Live",
+                    type: "LiveStream",
+                    target: document.getElementById("interactive"),
                 },
-                errorMessage => {
-                    // Tampilkan error jika ada
-                    console.log("Pemindaian gagal: ", errorMessage);
+                decoder: {
+                    readers: ["code_128_reader"] // Ubah sesuai jenis barcode yang ingin dipindai
+                },
+            }, function(err) {
+                if (err) {
+                    console.error(err);
+                    return;
                 }
-            ).catch(err => {
-                console.error("Gagal memulai pemindaian: ", err);
+                Quagga.start();
             });
-        }
 
-        // Event listener untuk tombol
-        document.getElementById("scanButton").addEventListener("click", startScanning);
+            Quagga.onDetected(function(data) {
+                document.getElementById("result").innerText = "Barcode: " + data.codeResult.code;
+                Quagga.stop(); // Hentikan pemindaian
+            });
+        });
     </script>
 </body>
 </html>
