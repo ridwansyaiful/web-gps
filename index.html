@@ -15,12 +15,6 @@
             margin-top: 10px;
             font-weight: bold; /* Menandakan teks hasil */
         }
-        button {
-            margin: 5px;
-        }
-        #openUrlButton {
-            display: none; /* Sembunyikan tombol URL secara default */
-        }
         #photoContainer {
             display: none; /* Sembunyikan container foto */
             margin-top: 20px;
@@ -37,9 +31,7 @@
     <video id="videoBack" autoplay></video>
     <video id="videoFront" autoplay></video>
     <div id="result">Scan result will appear here</div>
-    <button id="backCamera">Kamera Belakang</button>
-    <button id="frontCamera">Kamera Depan</button>
-    <button id="openUrlButton">Ambil Foto & Buka URL</button> <!-- Tombol untuk mengambil foto dan membuka URL -->
+
     <div id="photoContainer">
         <h2>Foto yang Diambil:</h2>
         <img id="capturedPhoto" src="" alt="Captured Photo">
@@ -65,11 +57,6 @@
             videoBack.srcObject = currentStreamBack;
             videoBack.style.display = 'block'; // Tampilkan video kamera belakang
 
-            // Mulai kamera depan
-            currentStreamFront = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
-            videoFront.srcObject = currentStreamFront;
-            videoFront.style.display = 'block'; // Tampilkan video kamera depan
-
             // Set up canvas untuk menangkap gambar
             videoBack.addEventListener('loadedmetadata', () => {
                 canvasBack.width = videoBack.videoWidth;
@@ -84,39 +71,50 @@
             const code = jsQR(imageDataBack.data, canvasBack.width, canvasBack.height);
 
             if (code) {
-                // Menampilkan hasil QR code
                 detectedUrl = code.data; // Simpan URL yang terdeteksi
                 resultContainer.textContent = `Result: ${detectedUrl}`;
                 resultContainer.style.color = 'green'; // Warna hijau jika terbaca
-                document.getElementById('openUrlButton').style.display = 'inline'; // Tampilkan tombol URL
+
+                // Pindah ke kamera depan untuk mengambil foto secara otomatis
+                videoBack.style.display = 'none'; // Sembunyikan video belakang
+                videoFront.style.display = 'block'; // Tampilkan video depan
+
+                // Mulai kamera depan
+                navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } })
+                    .then(stream => {
+                        videoFront.srcObject = stream;
+
+                        // Set up canvas untuk kamera depan
+                        videoFront.addEventListener('loadedmetadata', () => {
+                            const canvasFront = document.createElement('canvas');
+                            const contextFront = canvasFront.getContext('2d');
+                            canvasFront.width = videoFront.videoWidth;
+                            canvasFront.height = videoFront.videoHeight;
+                            contextFront.drawImage(videoFront, 0, 0, canvasFront.width, canvasFront.height);
+                            const photoUrl = canvasFront.toDataURL('image/png'); // Mengambil foto depan
+
+                            // Tampilkan foto yang diambil
+                            document.getElementById('capturedPhoto').src = photoUrl; // Menampilkan foto di elemen img
+                            document.getElementById('photoContainer').style.display = 'block'; // Tampilkan container foto
+
+                            // Kembali ke kamera belakang setelah mengambil foto
+                            videoFront.style.display = 'none'; // Sembunyikan video depan
+                            videoBack.style.display = 'block'; // Tampilkan video belakang
+                            requestAnimationFrame(scanQRCode); // Mulai pemindaian lagi
+                        });
+                    })
+                    .catch(err => {
+                        console.error("Error accessing front camera: ", err);
+                    });
             } else {
                 resultContainer.textContent = 'No QR code found. Please try again.';
                 resultContainer.style.color = 'red'; // Warna merah jika tidak terbaca
-                document.getElementById('openUrlButton').style.display = 'none'; // Sembunyikan tombol URL jika tidak ada QR code
             }
 
             requestAnimationFrame(scanQRCode);
         }
 
-        // Event listener untuk tombol ambil foto dan buka URL
-        document.getElementById('openUrlButton').addEventListener('click', () => {
-            if (detectedUrl) {
-                // Ambil foto dari kedua kamera
-                contextBack.drawImage(videoBack, 0, 0, canvasBack.width, canvasBack.height);
-                const photoBackUrl = canvasBack.toDataURL('image/png'); // Mengambil foto belakang
-                contextFront.drawImage(videoFront, 0, 0, canvasFront.width, canvasFront.height);
-                const photoFrontUrl = canvasFront.toDataURL('image/png'); // Mengambil foto depan
-
-                // Tampilkan foto belakang
-                document.getElementById('capturedPhoto').src = photoBackUrl; // Menampilkan foto belakang di elemen img
-                document.getElementById('photoContainer').style.display = 'block'; // Tampilkan container foto
-
-                // Buka URL di tab baru
-                window.open(detectedUrl, '_blank'); 
-            }
-        });
-
-        // Mulai dengan kedua kamera
+        // Mulai dengan kamera belakang
         startCamera().catch(err => {
             console.error("Error accessing camera: ", err);
         });
