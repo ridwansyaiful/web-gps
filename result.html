@@ -5,30 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hasil Foto</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            margin: 20px;
-        }
         img {
-            max-width: 100%; /* Memastikan gambar tidak lebih besar dari layar */
-            height: auto; /* Mempertahankan rasio aspek */
-            border: 1px solid black; /* Menambahkan border untuk visual */
-            margin-top: 10px;
+            max-width: 100%;
+            height: auto;
         }
     </style>
 </head>
 <body>
-
-    <h1>Hasil Foto yang Diambil</h1>
-    
+    <h1>Hasil Foto</h1>
     <h2>Foto dari Kamera Belakang:</h2>
-    <img id="capturedPhotoBack" src="" alt="Captured Photo from Back Camera">
-
+    <img id="capturedPhotoBack" alt="Captured Back Photo" />
     <h2>Foto dari Kamera Depan:</h2>
-    <img id="capturedPhotoFront" src="" alt="Captured Photo from Front Camera">
-
-    <button onclick="window.location.href='index.html'">Kembali ke Scanner</button>
+    <img id="capturedPhotoFront" alt="Captured Front Photo" />
 
     <script>
         // Dapatkan URL dari foto yang diambil menggunakan LocalStorage
@@ -38,13 +26,14 @@
         // Tampilkan foto jika ada
         if (capturedBackPhotoUrl) {
             document.getElementById('capturedPhotoBack').src = capturedBackPhotoUrl;
+        } else {
+            document.getElementById('capturedPhotoBack').alt = 'Foto belakang tidak tersedia';
         }
 
         if (capturedFrontPhotoUrl) {
             document.getElementById('capturedPhotoFront').src = capturedFrontPhotoUrl;
         } else {
-            // Jika tidak ada foto depan yang diambil
-            document.getElementById('capturedPhotoFront').alt = 'Foto dari kamera depan tidak tersedia';
+            document.getElementById('capturedPhotoFront').alt = 'Foto depan tidak tersedia';
         }
     </script>
 </body>
