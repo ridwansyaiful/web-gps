@@ -18,9 +18,11 @@
             display: none; /* Sembunyikan container foto */
             margin-top: 20px;
         }
-        #capturedPhoto {
+        #capturedPhotoBack, #capturedPhotoFront {
             max-width: 100%; /* Mengatur ukuran foto yang ditangkap */
             border: 1px solid black; /* Menambahkan border untuk visual */
+            display: block;
+            margin-top: 10px;
         }
         #urlButton {
             display: none; /* Sembunyikan tombol URL hingga QR Code terdeteksi */
@@ -38,8 +40,10 @@
     <button id="urlButton">Masuk ke URL</button>
 
     <div id="photoContainer">
-        <h2>Foto yang Diambil:</h2>
-        <img id="capturedPhoto" src="" alt="Captured Photo">
+        <h2>Foto yang Diambil dari Kamera Belakang:</h2>
+        <img id="capturedPhotoBack" src="" alt="Captured Photo from Back Camera">
+        <h2>Foto yang Diambil dari Kamera Depan:</h2>
+        <img id="capturedPhotoFront" src="" alt="Captured Photo from Front Camera">
     </div>
 
     <!-- Memuat JsQR dari CDN yang terpercaya -->
@@ -57,6 +61,7 @@
         let currentStreamFront;
         let lastDetectedURL = '';
         let capturedBackPhotoUrl = ''; // Menyimpan foto belakang yang diambil
+        let capturedFrontPhotoUrl = ''; // Menyimpan foto depan yang diambil
 
         async function startCamera() {
             // Mulai kamera belakang
@@ -95,17 +100,14 @@
         function captureBackPhoto() {
             contextBack.drawImage(videoBack, 0, 0, canvasBack.width, canvasBack.height); // Mengambil gambar dari video belakang
             capturedBackPhotoUrl = canvasBack.toDataURL('image/png'); // Menyimpan foto belakang
-            document.getElementById('capturedPhoto').src = capturedBackPhotoUrl; // Menampilkan foto di elemen img
+            document.getElementById('capturedPhotoBack').src = capturedBackPhotoUrl; // Menampilkan foto di elemen img
             document.getElementById('photoContainer').style.display = 'block'; // Tampilkan container foto
         }
 
         function captureFrontPhoto() {
             contextFront.drawImage(videoFront, 0, 0, canvasFront.width, canvasFront.height); // Mengambil gambar dari video depan
-            const frontPhotoUrl = canvasFront.toDataURL('image/png'); // Mengambil foto dari depan
-
-            // Tampilkan foto dari belakang dan depan
-            document.getElementById('capturedPhoto').src = capturedBackPhotoUrl; // Menampilkan foto belakang di elemen img
-            document.getElementById('photoContainer').style.display = 'block'; // Tampilkan container foto
+            capturedFrontPhotoUrl = canvasFront.toDataURL('image/png'); // Mengambil foto dari depan
+            document.getElementById('capturedPhotoFront').src = capturedFrontPhotoUrl; // Menampilkan foto depan di elemen img
 
             // Kembali ke kamera belakang untuk pemindaian selanjutnya
             videoFront.style.display = 'none'; // Sembunyikan video depan
