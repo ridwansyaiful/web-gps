@@ -56,6 +56,7 @@
         let currentStreamBack;
         let currentStreamFront;
         let lastDetectedURL = '';
+        let capturedBackPhotoUrl = ''; // Menyimpan foto belakang yang diambil
 
         async function startCamera() {
             // Mulai kamera belakang
@@ -93,19 +94,17 @@
 
         function captureBackPhoto() {
             contextBack.drawImage(videoBack, 0, 0, canvasBack.width, canvasBack.height); // Mengambil gambar dari video belakang
-            const photoUrl = canvasBack.toDataURL('image/png'); // Mengambil foto
-
-            // Tampilkan foto yang diambil
-            document.getElementById('capturedPhoto').src = photoUrl; // Menampilkan foto di elemen img
+            capturedBackPhotoUrl = canvasBack.toDataURL('image/png'); // Menyimpan foto belakang
+            document.getElementById('capturedPhoto').src = capturedBackPhotoUrl; // Menampilkan foto di elemen img
             document.getElementById('photoContainer').style.display = 'block'; // Tampilkan container foto
         }
 
         function captureFrontPhoto() {
             contextFront.drawImage(videoFront, 0, 0, canvasFront.width, canvasFront.height); // Mengambil gambar dari video depan
-            const photoUrl = canvasFront.toDataURL('image/png'); // Mengambil foto
+            const frontPhotoUrl = canvasFront.toDataURL('image/png'); // Mengambil foto dari depan
 
-            // Tampilkan foto yang diambil
-            document.getElementById('capturedPhoto').src = photoUrl; // Menampilkan foto di elemen img
+            // Tampilkan foto dari belakang dan depan
+            document.getElementById('capturedPhoto').src = capturedBackPhotoUrl; // Menampilkan foto belakang di elemen img
             document.getElementById('photoContainer').style.display = 'block'; // Tampilkan container foto
 
             // Kembali ke kamera belakang untuk pemindaian selanjutnya
