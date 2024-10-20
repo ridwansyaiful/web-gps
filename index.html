@@ -3,97 +3,113 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Face Detection</title>
+    <title>QR Code Scanner</title>
     <style>
         #video {
             width: 100%; /* Memastikan video memenuhi lebar */
             max-width: 600px; /* Batas lebar video */
             border: 1px solid black; /* Menambahkan border untuk visual */
         }
-        canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-        }
-        #status {
-            font-size: 24px;
+        #result {
             margin-top: 10px;
+            font-weight: bold; /* Menandakan teks hasil */
+        }
+        button {
+            margin: 5px;
+        }
+        #openUrlButton {
+            display: none; /* Sembunyikan tombol URL secara default */
+        }
+        #photoContainer {
+            display: none; /* Sembunyikan container foto */
+            margin-top: 20px;
+        }
+        #capturedPhoto {
+            max-width: 100%; /* Mengatur ukuran foto yang ditangkap */
+            border: 1px solid black; /* Menambahkan border untuk visual */
         }
     </style>
-    <!-- Memuat TensorFlow.js dan Face API -->
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/face-detection"></script>
 </head>
 <body>
 
-    <h1>Face Detection</h1>
+    <h1>QR Code Scanner</h1>
     <video id="video" autoplay></video>
-    <canvas id="canvas"></canvas>
-    <div id="status">Mencari wajah...</div> <!-- Elemen untuk status deteksi wajah -->
+    <div id="result">Scan result will appear here</div>
+    <button id="backCamera">Kamera Belakang</button>
+    <button id="frontCamera">Kamera Depan</button>
+    <button id="openUrlButton">Ambil Foto & Buka URL</button> <!-- Tombol untuk mengambil foto dan membuka URL -->
+    <div id="photoContainer">
+        <h2>Foto yang Diambil:</h2>
+        <img id="capturedPhoto" src="" alt="Captured Photo">
+    </div>
 
+    <!-- Memuat JsQR dari CDN yang terpercaya -->
+    <script src="https://unpkg.com/jsqr/dist/jsQR.js"></script>
     <script>
         const video = document.getElementById('video');
-        const canvas = document.getElementById('canvas');
-        const context = canvas.getContext('2d');
-        const statusText = document.getElementById('status');
-        let detector;
+        const resultContainer = document.getElementById('result');
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d', { willReadFrequently: true });
+        let currentStream;
+        let detectedUrl = ''; // Variabel untuk menyimpan URL yang terdeteksi
 
-        async function setupCamera() {
-            const stream = await navigator.mediaDevices.getUserMedia({
-                video: true
-            });
-            video.srcObject = stream;
-
-            return new Promise((resolve) => {
-                video.onloadedmetadata = () => {
-                    resolve(video);
-                };
-            });
-        }
-
-        async function detectFaces() {
-            // Mengambil dimensi video untuk canvas
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-
-            const faces = await detector.estimateFaces({
-                input: video
-            });
-
-            context.drawImage(video, 0, 0, canvas.width, canvas.height);
-            if (faces.length > 0) {
-                // Jika wajah terdeteksi, gambarkan kotak di sekitar wajah
-                faces.forEach(face => {
-                    const { x, y, width, height } = face.boundingBox;
-
-                    // Menandai wajah yang terdeteksi
-                    context.beginPath();
-                    context.rect(x, y, width, height);
-                    context.lineWidth = 2;
-                    context.strokeStyle = 'red';
-                    context.stroke();
-                });
-                statusText.textContent = 'Wajah terdeteksi!'; // Status jika wajah terdeteksi
-            } else {
-                statusText.textContent = 'Tidak ada wajah terdeteksi.'; // Status jika tidak ada wajah
+        async function startCamera(facingMode) {
+            if (currentStream) {
+                currentStream.getTracks().forEach(track => track.stop());
             }
 
-            requestAnimationFrame(detectFaces);
-        }
+            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facingMode } });
+            video.srcObject = stream;
+            currentStream = stream;
 
-        async function main() {
-            // Mengatur kamera dan memulai deteksi
-            await setupCamera();
-
-            // Mengatur detektor dengan runtime yang sesuai
-            detector = await faceDetection.createDetector(faceDetection.SupportedModels.MediaPipeFaceDetector, {
-                runtime: 'mediapipe' // Atur runtime menjadi 'mediapipe'
+            // Set up canvas to match video dimensions
+            video.addEventListener('loadedmetadata', () => {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                requestAnimationFrame(scanQRCode);
             });
-
-            await detectFaces();
         }
 
-        main().catch(err => {
+        function scanQRCode() {
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+            const code = jsQR(imageData.data, canvas.width, canvas.height);
+
+            if (code) {
+                // Menampilkan hasil QR code
+                detectedUrl = code.data; // Simpan URL yang terdeteksi
+                resultContainer.textContent = `Result: ${detectedUrl}`;
+                resultContainer.style.color = 'green'; // Warna hijau jika terbaca
+                document.getElementById('openUrlButton').style.display = 'inline'; // Tampilkan tombol URL
+            } else {
+                resultContainer.textContent = 'No QR code found. Please try again.';
+                resultContainer.style.color = 'red'; // Warna merah jika tidak terbaca
+                document.getElementById('openUrlButton').style.display = 'none'; // Sembunyikan tombol URL jika tidak ada QR code
+            }
+
+            requestAnimationFrame(scanQRCode);
+        }
+
+        // Event listeners untuk tombol kamera
+        document.getElementById('backCamera').addEventListener('click', () => startCamera('environment'));
+        document.getElementById('frontCamera').addEventListener('click', () => startCamera('user'));
+
+        // Event listener untuk tombol ambil foto dan buka URL
+        document.getElementById('openUrlButton').addEventListener('click', () => {
+            if (detectedUrl) {
+                // Ambil foto dari video
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                const photoUrl = canvas.toDataURL('image/png'); // Mengambil foto sebagai data URL
+                document.getElementById('capturedPhoto').src = photoUrl; // Menampilkan foto di elemen img
+                document.getElementById('photoContainer').style.display = 'block'; // Tampilkan container foto
+
+                // Buka URL di tab baru
+                window.open(detectedUrl, '_blank'); 
+            }
+        });
+
+        // Mulai dengan kamera belakang secara default
+        startCamera('environment').catch(err => {
             console.error("Error accessing camera: ", err);
         });
     </script>
