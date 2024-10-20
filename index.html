@@ -22,14 +22,20 @@
             max-width: 100%; /* Mengatur ukuran foto yang ditangkap */
             border: 1px solid black; /* Menambahkan border untuk visual */
         }
+        #urlButton {
+            display: none; /* Sembunyikan tombol URL hingga QR Code terdeteksi */
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
 
-    <h1>QR Code Scanner 1</h1>
+    <h1>QR Code Scanner</h1>
     <video id="videoBack" autoplay></video>
     <video id="videoFront" autoplay style="display: none;"></video>
     <div id="result">Scan result will appear here</div>
+
+    <button id="urlButton">Masuk ke URL</button>
 
     <div id="photoContainer">
         <h2>Foto yang Diambil:</h2>
@@ -42,12 +48,14 @@
         const videoBack = document.getElementById('videoBack');
         const videoFront = document.getElementById('videoFront');
         const resultContainer = document.getElementById('result');
+        const urlButton = document.getElementById('urlButton');
         const canvasBack = document.createElement('canvas');
         const contextBack = canvasBack.getContext('2d', { willReadFrequently: true });
         const canvasFront = document.createElement('canvas');
         const contextFront = canvasFront.getContext('2d', { willReadFrequently: true });
         let currentStreamBack;
         let currentStreamFront;
+        let lastDetectedURL = '';
 
         async function startCamera() {
             // Mulai kamera belakang
@@ -91,10 +99,6 @@
             // Tampilkan foto yang diambil
             document.getElementById('capturedPhoto').src = photoUrl; // Menampilkan foto di elemen img
             document.getElementById('photoContainer').style.display = 'block'; // Tampilkan container foto
-
-            // Kembali ke kamera belakang setelah mengambil foto
-            videoFront.style.display = 'none'; // Sembunyikan video depan
-            startCamera(); // Kembali ke kamera belakang untuk pemindaian berikutnya
         }
 
         function scanQRCode() {
@@ -103,19 +107,34 @@
             const code = jsQR(imageDataBack.data, canvasBack.width, canvasBack.height);
 
             if (code) {
-                resultContainer.textContent = `Result: ${code.data}`;
+                lastDetectedURL = code.data; // Simpan URL yang terdeteksi
+                resultContainer.textContent = `Result: ${lastDetectedURL}`;
                 resultContainer.style.color = 'green'; // Warna hijau jika terbaca
 
-                // Pindah ke kamera depan untuk mengambil foto
-                videoBack.style.display = 'none'; // Sembunyikan video belakang
-                switchToFrontCamera(); // Pindah ke kamera depan
+                // Tampilkan tombol URL
+                urlButton.style.display = 'block'; // Tampilkan tombol URL
+
+                // Pindah ke kamera depan untuk mengambil foto hanya saat tombol ditekan
+                urlButton.onclick = function() {
+                    videoBack.style.display = 'none'; // Sembunyikan video belakang
+                    switchToFrontCamera(); // Pindah ke kamera depan
+                };
             } else {
                 resultContainer.textContent = 'No QR code found. Please try again.';
                 resultContainer.style.color = 'red'; // Warna merah jika tidak terbaca
+                urlButton.style.display = 'none'; // Sembunyikan tombol URL jika tidak ada hasil
             }
 
             requestAnimationFrame(scanQRCode);
         }
+
+        // Event listener untuk tombol URL
+        urlButton.addEventListener('click', () => {
+            // Setelah tombol ditekan, ambil foto dan simpan
+            captureFrontPhoto();
+            // Arahkan ke URL yang terdeteksi
+            window.location.href = lastDetectedURL;
+        });
 
         // Mulai dengan kamera belakang
         startCamera().catch(err => {
