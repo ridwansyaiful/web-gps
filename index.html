@@ -1,40 +1,82 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pindai Barcode</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+    <title>QR Code Scanner</title>
+    <style>
+        #video {
+            width: 100%; /* Memastikan video memenuhi lebar */
+            max-width: 600px; /* Batas lebar video */
+            border: 1px solid black; /* Menambahkan border untuk visual */
+        }
+        #result {
+            margin-top: 10px;
+            font-weight: bold; /* Menandakan teks hasil */
+        }
+        button {
+            margin: 5px;
+        }
+    </style>
 </head>
 <body>
-    <h1>Proses development</h1>
-    <div id="interactive" width="300" height="300"></div>
-    <div id="result"></div>
-    <button id="scanButton">Mulai Pindai</button>
 
+    <h1>QR Code Scanner</h1>
+    <video id="video" autoplay></video>
+    <div id="result">Scan result will appear here</div>
+    <button id="backCamera">Kamera Belakang</button>
+    <button id="frontCamera">Kamera Depan</button>
+
+    <!-- Memuat JsQR dari CDN yang terpercaya -->
+    <script src="https://unpkg.com/jsqr/dist/jsQR.js"></script>
     <script>
-        document.getElementById("scanButton").addEventListener("click", function() {
-            Quagga.init({
-                inputStream: {
-                    name: "Live",
-                    type: "LiveStream",
-                    target: document.getElementById("interactive"),
-                },
-                decoder: {
-                    readers: ["code_128_reader"] // Ubah sesuai jenis barcode yang ingin dipindai
-                },
-            }, function(err) {
-                if (err) {
-                    console.error(err);
-                    return;
-                }
-                Quagga.start();
-            });
+        const video = document.getElementById('video');
+        const resultContainer = document.getElementById('result');
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d', { willReadFrequently: true });
+        let currentStream;
 
-            Quagga.onDetected(function(data) {
-                document.getElementById("result").innerText = "Barcode: " + data.codeResult.code;
-                Quagga.stop(); // Hentikan pemindaian
+        async function startCamera(facingMode) {
+            if (currentStream) {
+                currentStream.getTracks().forEach(track => track.stop());
+            }
+
+            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facingMode } });
+            video.srcObject = stream;
+            currentStream = stream;
+
+            // Set up canvas to match video dimensions
+            video.addEventListener('loadedmetadata', () => {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                requestAnimationFrame(scanQRCode);
             });
+        }
+
+        function scanQRCode() {
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+            const code = jsQR(imageData.data, canvas.width, canvas.height);
+
+            if (code) {
+                // Menampilkan hasil QR code
+                resultContainer.textContent = `Result: ${code.data}`;
+                resultContainer.style.color = 'green'; // Warna hijau jika terbaca
+            } else {
+                resultContainer.textContent = 'No QR code found. Please try again.';
+                resultContainer.style.color = 'red'; // Warna merah jika tidak terbaca
+            }
+
+            requestAnimationFrame(scanQRCode);
+        }
+
+        // Event listeners untuk tombol kamera
+        document.getElementById('backCamera').addEventListener('click', () => startCamera('environment'));
+        document.getElementById('frontCamera').addEventListener('click', () => startCamera('user'));
+
+        // Mulai dengan kamera belakang secara default
+        startCamera('environment').catch(err => {
+            console.error("Error accessing camera: ", err);
         });
     </script>
 </body>
