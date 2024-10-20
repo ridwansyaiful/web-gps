@@ -84,7 +84,10 @@
             if (code) {
                 resultContainer.textContent = `Result: ${code.data}`;
                 captureBackPhoto();
-                setTimeout(startCameraFront, 1000); // Pindah ke kamera depan setelah 1 detik
+                setTimeout(() => {
+                    videoBack.style.display = 'none'; // Sembunyikan video belakang saat ambil foto depan
+                    startCameraFront();
+                }, 1000); // Pindah ke kamera depan setelah 1 detik
             } else {
                 resultContainer.textContent = 'No QR code found. Please try again.';
             }
@@ -97,8 +100,10 @@
             const capturedBackPhotoUrl = canvasBack.toDataURL('image/png');
             document.getElementById('capturedPhotoBack').src = capturedBackPhotoUrl;
             document.getElementById('backPhotoLink').href = capturedBackPhotoUrl; // Set link untuk foto belakang
+            document.getElementById('backPhotoLink').onclick = function() {
+                window.open(capturedBackPhotoUrl, '_blank'); // Buka foto belakang di tab baru
+            };
             document.getElementById('photoContainer').style.display = 'block';
-            localStorage.setItem('capturedBackPhoto', capturedBackPhotoUrl);
         }
 
         async function captureFrontPhoto() {
@@ -106,7 +111,9 @@
             const capturedFrontPhotoUrl = canvasFront.toDataURL('image/png');
             document.getElementById('capturedPhotoFront').src = capturedFrontPhotoUrl;
             document.getElementById('frontPhotoLink').href = capturedFrontPhotoUrl; // Set link untuk foto depan
-            localStorage.setItem('capturedFrontPhoto', capturedFrontPhotoUrl);
+            document.getElementById('frontPhotoLink').onclick = function() {
+                window.open(capturedFrontPhotoUrl, '_blank'); // Buka foto depan di tab baru
+            };
 
             // Kembali ke kamera belakang untuk pemindaian selanjutnya
             videoFront.style.display = 'none';
