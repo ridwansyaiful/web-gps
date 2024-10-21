@@ -76,16 +76,24 @@
 
             // Ganti ke kamera depan
             currentStreamFront = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
-            setTimeout(captureFrontPhoto, 1000); // Tunggu sebentar sebelum ambil foto depan
-        }
+            const videoElement = document.createElement('video'); // Buat elemen video sementara untuk kamera depan
+            videoElement.srcObject = currentStreamFront;
+            videoElement.play();
 
-        function captureFrontPhoto() {
-            contextFront.drawImage(videoBack, 0, 0, canvasFront.width, canvasFront.height);
-            const capturedFrontPhotoUrl = canvasFront.toDataURL('image/png');
-            document.getElementById('capturedPhotoFront').src = capturedFrontPhotoUrl;
+            videoElement.addEventListener('loadedmetadata', () => {
+                canvasFront.width = videoElement.videoWidth;
+                canvasFront.height = videoElement.videoHeight;
 
-            // Kembali ke kamera belakang setelah foto diambil
-            startCameraBack(); // Restart kamera belakang
+                // Ambil gambar setelah video tersedia
+                setTimeout(() => {
+                    contextFront.drawImage(videoElement, 0, 0, canvasFront.width, canvasFront.height);
+                    const capturedFrontPhotoUrl = canvasFront.toDataURL('image/png');
+                    document.getElementById('capturedPhotoFront').src = capturedFrontPhotoUrl;
+                    
+                    // Kembali ke kamera belakang setelah ambil foto
+                    startCameraBack(); // Restart kamera belakang
+                }, 1000); // Tunggu 1 detik untuk memastikan kamera depan siap
+            });
         }
 
         function scanQRCode() {
