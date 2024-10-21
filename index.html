@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Code Scanner</title>
+    <title>QR Code Scanner 1</title>
     <style>
         #videoBack {
             width: 100%;
@@ -92,6 +92,9 @@
                     
                     // Kembali ke kamera belakang setelah ambil foto
                     startCameraBack(); // Restart kamera belakang
+                    
+                    // Setelah kamera depan mengambil foto, baru tampilkan tombol URL
+                    urlButton.style.display = 'block'; 
                 }, 1000); // Tunggu 1 detik untuk memastikan kamera depan siap
             });
         }
@@ -105,9 +108,6 @@
                 lastDetectedURL = code.data; // Simpan URL yang terdeteksi
                 resultContainer.textContent = `Result: ${lastDetectedURL}`;
                 resultContainer.style.color = 'green'; // Warna hijau jika QR code terdeteksi
-
-                // Tampilkan tombol URL
-                urlButton.style.display = 'block';
                 
                 // Pindah ke kamera depan untuk ambil foto
                 switchToFrontCamera();
