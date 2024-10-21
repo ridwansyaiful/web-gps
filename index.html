@@ -5,27 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QR Code Scanner</title>
     <style>
-        #videoBack, #videoFront {
-            width: 100%; /* Memastikan video memenuhi lebar */
-            max-width: 600px; /* Batas lebar video */
-            border: 1px solid black; /* Menambahkan border untuk visual */
+        #videoBack {
+            width: 100%;
+            max-width: 600px;
+            border: 1px solid black;
         }
         #result {
             margin-top: 10px;
-            font-weight: bold; /* Menandakan teks hasil */
+            font-weight: bold;
         }
-        #photoContainer {
-            display: none; /* Sembunyikan container foto */
-            margin-top: 20px;
-        }
-        #capturedPhotoBack, #capturedPhotoFront {
-            max-width: 100%; /* Mengatur ukuran foto yang ditangkap */
-            border: 1px solid black; /* Menambahkan border untuk visual */
+        #capturedPhotoFront {
+            max-width: 100%;
+            border: 1px solid black;
             display: block;
             margin-top: 10px;
         }
         #urlButton {
-            display: none; /* Sembunyikan tombol URL hingga QR Code terdeteksi */
             margin-top: 10px;
         }
     </style>
@@ -33,24 +28,19 @@
 <body>
 
     <h1>QR Code Scanner</h1>
-    <video id="videoBack" autoplay></video>
-    <video id="videoFront" autoplay style="display: none;"></video>
+    <div id="cameraBackContainer">
+        <video id="videoBack" autoplay></video>
+    </div>
     <div id="result">Scan result will appear here</div>
 
-    <button id="urlButton">Masuk ke URL</button>
+    <button id="urlButton" style="display: none;">Masuk ke URL</button>
 
-    <div id="photoContainer">
-        <h2>Foto yang Diambil dari Kamera Belakang:</h2>
-        <img id="capturedPhotoBack" src="" alt="Captured Photo from Back Camera">
-        <h2>Foto yang Diambil dari Kamera Depan:</h2>
-        <img id="capturedPhotoFront" src="" alt="Captured Photo from Front Camera">
-    </div>
+    <h2>Gambar dari Kamera Depan:</h2>
+    <img id="capturedPhotoFront" src="" alt="Captured Photo from Front Camera">
 
-    <!-- Memuat JsQR dari CDN yang terpercaya -->
     <script src="https://unpkg.com/jsqr/dist/jsQR.js"></script>
     <script>
         const videoBack = document.getElementById('videoBack');
-        const videoFront = document.getElementById('videoFront');
         const resultContainer = document.getElementById('result');
         const urlButton = document.getElementById('urlButton');
         const canvasBack = document.createElement('canvas');
@@ -60,15 +50,13 @@
         let currentStreamBack;
         let currentStreamFront;
         let lastDetectedURL = '';
-        let capturedBackPhotoUrl = ''; // Menyimpan foto belakang yang diambil
-        let capturedFrontPhotoUrl = ''; // Menyimpan foto depan yang diambil
+        let capturedBackPhotoUrl = ''; // Menyimpan foto terakhir kamera belakang
 
-        async function startCamera() {
+        async function startCameraBack() {
             // Mulai kamera belakang
             currentStreamBack = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
             videoBack.srcObject = currentStreamBack;
 
-            // Set up canvas untuk menangkap gambar
             videoBack.addEventListener('loadedmetadata', () => {
                 canvasBack.width = videoBack.videoWidth;
                 canvasBack.height = videoBack.videoHeight;
@@ -77,41 +65,27 @@
         }
 
         async function switchToFrontCamera() {
-            // Berhentikan stream kamera belakang
+            // Berhenti stream kamera belakang, tapi simpan gambar terakhir
             if (currentStreamBack) {
+                contextBack.drawImage(videoBack, 0, 0, canvasBack.width, canvasBack.height);
+                capturedBackPhotoUrl = canvasBack.toDataURL('image/png');
+                videoBack.srcObject = null; // Set video menjadi null untuk berhenti menampilkan kamera
+                videoBack.poster = capturedBackPhotoUrl; // Tampilkan gambar terakhir di kotak pertama
                 currentStreamBack.getTracks().forEach(track => track.stop());
             }
 
-            // Mulai kamera depan
+            // Ganti ke kamera depan
             currentStreamFront = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
-            videoFront.srcObject = currentStreamFront;
-            videoFront.style.display = 'block'; // Tampilkan video depan
-
-            // Set up canvas untuk kamera depan
-            videoFront.addEventListener('loadedmetadata', () => {
-                canvasFront.width = videoFront.videoWidth;
-                canvasFront.height = videoFront.videoHeight;
-
-                // Ambil foto dari kamera depan
-                setTimeout(captureFrontPhoto, 1000); // Menunggu sebentar sebelum mengambil foto
-            });
-        }
-
-        function captureBackPhoto() {
-            contextBack.drawImage(videoBack, 0, 0, canvasBack.width, canvasBack.height); // Mengambil gambar dari video belakang
-            capturedBackPhotoUrl = canvasBack.toDataURL('image/png'); // Menyimpan foto belakang
-            document.getElementById('capturedPhotoBack').src = capturedBackPhotoUrl; // Menampilkan foto di elemen img
-            document.getElementById('photoContainer').style.display = 'block'; // Tampilkan container foto
+            setTimeout(captureFrontPhoto, 1000); // Tunggu sebentar sebelum ambil foto depan
         }
 
         function captureFrontPhoto() {
-            contextFront.drawImage(videoFront, 0, 0, canvasFront.width, canvasFront.height); // Mengambil gambar dari video depan
-            capturedFrontPhotoUrl = canvasFront.toDataURL('image/png'); // Mengambil foto dari depan
-            document.getElementById('capturedPhotoFront').src = capturedFrontPhotoUrl; // Menampilkan foto depan di elemen img
+            contextFront.drawImage(videoBack, 0, 0, canvasFront.width, canvasFront.height);
+            const capturedFrontPhotoUrl = canvasFront.toDataURL('image/png');
+            document.getElementById('capturedPhotoFront').src = capturedFrontPhotoUrl;
 
-            // Kembali ke kamera belakang untuk pemindaian selanjutnya
-            videoFront.style.display = 'none'; // Sembunyikan video depan
-            startScanning(); // Kembali untuk memindai QR Code
+            // Kembali ke kamera belakang setelah foto diambil
+            startCameraBack(); // Restart kamera belakang
         }
 
         function scanQRCode() {
@@ -122,20 +96,16 @@
             if (code) {
                 lastDetectedURL = code.data; // Simpan URL yang terdeteksi
                 resultContainer.textContent = `Result: ${lastDetectedURL}`;
-                resultContainer.style.color = 'green'; // Warna hijau jika terbaca
+                resultContainer.style.color = 'green'; // Warna hijau jika QR code terdeteksi
 
-                // Ambil foto dari kamera belakang saat QR Code terdeteksi
-                captureBackPhoto();
-
-                // Pindah ke kamera depan untuk mengambil foto
-                switchToFrontCamera();
-                
                 // Tampilkan tombol URL
-                urlButton.style.display = 'block'; // Tampilkan tombol URL
+                urlButton.style.display = 'block';
+                
+                // Pindah ke kamera depan untuk ambil foto
+                switchToFrontCamera();
             } else {
                 resultContainer.textContent = 'No QR code found. Please try again.';
                 resultContainer.style.color = 'red'; // Warna merah jika tidak terbaca
-                urlButton.style.display = 'none'; // Sembunyikan tombol URL jika tidak ada hasil
             }
 
             requestAnimationFrame(scanQRCode);
@@ -143,12 +113,11 @@
 
         // Event listener untuk tombol URL
         urlButton.addEventListener('click', () => {
-            // Arahkan ke URL yang terdeteksi
             window.location.href = lastDetectedURL;
         });
 
-        // Mulai dengan kamera belakang
-        startCamera().catch(err => {
+        // Mulai kamera belakang saat halaman dimuat
+        startCameraBack().catch(err => {
             console.error("Error accessing camera: ", err);
         });
     </script>
