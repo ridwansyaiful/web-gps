@@ -179,7 +179,8 @@
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
 
-        let deviceID = 'device1'; // ID perangkat aktif saat ini
+        // let deviceID = 'device1'; // ID perangkat aktif saat ini
+        const deviceID = `device_${Math.random().toString(36).substr(2, 9)}`; // Menghasilkan ID unik untuk setiap perangkat
         let isFirstLoad = true;
         let stepSize = 0.0002; // Ukuran langkah
         let virtualLat = -7.975500; // Lokasi virtual awal
