@@ -3,18 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Monitoring</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <style>
-        #map {
-            height: 500px;
-            width: 100%;
-        }
-    </style>
+    <title>Sistem Lapor</title>
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-app.js';
-        import { getDatabase, ref, onValue, remove } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-database.js';
+        import { getDatabase, ref, set, onDisconnect } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-database.js';
 
         const firebaseConfig = {
             apiKey: "AIzaSyDgPYGXqbBXt1NayhNB5M-8mjXfGKrOzWM",
@@ -29,71 +21,68 @@
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
 
-        let map;
-        let markers = {}; // Menyimpan marker perangkat berdasarkan deviceId
+        // Fungsi untuk mendapatkan atau membuat deviceId
+        function getDeviceId() {
+            let deviceId = localStorage.getItem('deviceId');
+            if (!deviceId) {
+                // Jika tidak ada deviceId, buat ID baru berdasarkan waktu dan simpan ke LocalStorage
+                deviceId = `device${Date.now()}`;
+                localStorage.setItem('deviceId', deviceId);
+            }
+            return deviceId;
+        }
 
-        // Fungsi untuk menghapus semua data lokasi di Firebase
-        function clearAllLocations() {
-            const locationsRef = ref(database, 'devices');
-            remove(locationsRef)
-                .then(() => {
-                    console.log('Semua data lokasi berhasil dihapus dari Firebase.');
-                })
-                .catch((error) => {
-                    console.error('Gagal menghapus data lokasi:', error);
+        function getLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.watchPosition(showPosition, showError, {
+                    enableHighAccuracy: true
                 });
+            } else {
+                alert("Geolocation tidak didukung oleh browser ini.");
+            }
         }
 
-        // Fungsi untuk memantau lokasi perangkat secara real-time
-        function monitorDevices() {
-            const devicesRef = ref(database, 'devices');
+        function showPosition(position) {
+            const lat = position.coords.latitude;
+            const lon = position.coords.longitude;
 
-            onValue(devicesRef, (snapshot) => {
-                const data = snapshot.val();
+            // Gunakan deviceId dari localStorage untuk mengidentifikasi perangkat
+            const deviceId = getDeviceId();
+            const locationRef = ref(database, `devices/${deviceId}`);
 
-                // Hapus semua marker lama dari peta
-                for (let deviceId in markers) {
-                    map.removeLayer(markers[deviceId]);
-                }
-
-                // Tampilkan lokasi semua perangkat yang ada di Firebase
-                if (data) {
-                    Object.keys(data).forEach((deviceId) => {
-                        const deviceData = data[deviceId];
-                        const lat = deviceData.latitude;
-                        const lon = deviceData.longitude;
-
-                        // Buat atau perbarui marker di peta
-                        const marker = L.marker([lat, lon]).addTo(map)
-                            .bindPopup(`<b>${deviceId}</b><br>Latitude: ${lat}<br>Longitude: ${lon}`);
-                        
-                        // Simpan marker dalam objek markers
-                        markers[deviceId] = marker;
-                    });
-                }
+            // Menyimpan data lokasi ke Firebase
+            set(locationRef, {
+                latitude: lat,
+                longitude: lon,
+                timestamp: Date.now()
             });
+
+            // Menghapus data ketika perangkat keluar
+            onDisconnect(locationRef).remove();
         }
 
-        // Fungsi untuk inisialisasi peta
-        function initializeMap() {
-            map = L.map('map').setView([-6.200000, 106.816666], 5); // Fokus awal di Indonesia
-
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                maxZoom: 19,
-            }).addTo(map);
+        function showError(error) {
+            switch (error.code) {
+                case error.PERMISSION_DENIED:
+                    alert("Target tidak izinkan lokasi.");
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    alert("Informasi lokasi tidak tersedia.");
+                    break;
+                case error.TIMEOUT:
+                    alert("Permintaan untuk mendapatkan lokasi pengguna telah habis.");
+                    break;
+                case error.UNKNOWN_ERROR:
+                    alert("Terjadi kesalahan yang tidak diketahui.");
+                    break;
+            }
         }
 
-        // Ketika halaman dimuat, hapus semua data lokasi terlebih dahulu, kemudian pantau lokasi
-        window.onload = function() {
-            clearAllLocations(); // Menghapus semua data lokasi di Firebase
-            initializeMap(); // Inisialisasi peta
-            monitorDevices(); // Memantau perangkat secara real-time
-        };
+        window.onload = getLocation;
     </script>
 </head>
 <body>
-    <h1>Sistem Monitoring</h1>
+    <h1>Sistem Lapor</h1>
     <p>Proses Development...</p>
-    <div id="map"></div> <!-- Peta untuk menampilkan lokasi perangkat -->
 </body>
 </html>
