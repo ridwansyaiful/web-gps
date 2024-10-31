@@ -1,171 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Jiblapor</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <style>
-        #map {
-            height: 400px;
-            width: 100%;
-        }
-
-        .container {
-            text-align: center;
-            margin-top: 20px;
-        }
-
-        .button {
-            display: inline-block;
-            margin: 10px;
-            padding: 10px 20px;
-            font-size: 16px;
-            cursor: pointer;
-            background-color: #008CBA;
-            /* Warna hijau */
-            color: white;
-            /* Warna teks */
-            border: none;
-            border-radius: 5px;
-            text-decoration: none;
-            /* Menghilangkan garis bawah */
-        }
-
-        .button:hover {
-            background-color: #45a049;
-            /* Warna saat hover */
-        }
-
-        .datetime {
-            font-size: 18px;
-            margin-bottom: 20px;
-        }
-
-        .blue-button {
-            background-color: #4CAF50;
-            /* Warna biru */
-            color: white;
-            display: block;
-            /* Membuat tombol biru tampil memanjang */
-            width: 80%;
-            /* Ukuran memanjang */
-            margin: 20px auto;
-            /* Mengatur posisi tengah */
-            padding: 15px;
-            /* Padding tombol biru */
-            font-size: 18px;
-            /* Ukuran font lebih besar */
-            text-align: center;
-            /* Teks di tengah */
-            text-decoration: none;
-            /* Menghilangkan garis bawah */
-        }
-
-        .blue-button:hover {
-            background-color: #007bb5;
-            /* Warna saat hover untuk tombol biru */
-        }
-
-        h4 {
-            text-align: left;
-            font-size: var(--h1-font-size, 22px);
-            /* Ukuran default 32px, bisa disesuaikan */
-            line-height: 1;
-            font-family: Arial, Verdana, sans-serif;
-            /* Jenis font yang diatur */
-            color: rgb(124, 5, 5);
-            margin-top: 50px;
-            margin-bottom: 1px;
-            /* Tambahkan margin atas jika diperlukan */
-        }
-
-        /* Styling untuk daftar bernomor */
-        ol {
-            text-align: left;
-            margin-left: 20px;
-            font-size: 18px;
-            line-height: 1.6;
-        }
-
-        .social-icons {
-            margin-top: 1px;
-            text-align: center;
-        }
-
-        .social-icons img {
-            width: 24px;
-            vertical-align: middle;
-            margin-right: 8px;
-        }
-
-        .social-icons a {
-            color: #007BFF;
-            text-decoration: none;
-            font-size: 20px;
-        }
-
-        .social-icons a:hover {
-            text-decoration: underline;
-        }
-
-        #mampir {
-            margin-top: 50px;
-            margin-bottom: 10px;
-            font-size: 17px;
-            text-align: center;
-        }
-
-        footer {
-            margin-top: 30px;
-            font-size: 16px;
-            text-align: center;
-            color: gray;
-        }
-
-        @keyframes blink {
-            0% {
-                visibility: visible;
-            }
-
-            50% {
-                visibility: hidden;
-            }
-
-            100% {
-                visibility: visible;
-            }
-        }
-
-        /* Styling untuk tulisan berkedip */
-        .blinking-text {
-            /* line-height: 0.5; */
-            margin-top: 1px;
-            color: red;
-            font-weight: bold;
-            font-size: 18px;
-            animation: blink 1s steps(2, start) infinite;
-        }
-    </style>
+    <title>Sistem Lapor</title>
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-app.js';
-        import { getDatabase, ref, set, get, onValue } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-database.js';
+        import { getDatabase, ref, set, remove } from 'https://www.gstatic.com/firebasejs/9.16.0/firebase-database.js';
 
-        let userLat, userLon;
-        let locationPermissionGranted = false; // Variabel untuk mengecek apakah izin sudah diberikan
-        let locationPermissionGranted1 = false; // Variabel untuk mengecek apakah izin sudah diberikan
-        let locationPermissionGranted2 = false; // Variabel untuk mengecek apakah izin sudah diberikan
-        let locationPermissionGranted3 = false;
-
-        let hobiku = false; // Variabel untuk mengecek apakah izin sudah diberikan
-        let dayoh = false; // Variabel untuk mengecek apakah izin sudah diberikan
-        let liane = false; // Variabel untuk mengecek apakah izin sudah diberikan
-        let kampung = false;
-
-        let locationRequested = false;
-
+        // Konfigurasi Firebase Anda
         const firebaseConfig = {
             apiKey: "AIzaSyDgPYGXqbBXt1NayhNB5M-8mjXfGKrOzWM",
             authDomain: "coba-accf3.firebaseapp.com",
@@ -176,454 +19,69 @@
             appId: "1:171764982868:web:19c716f6617667514679c1"
         };
 
+        // Inisialisasi Firebase
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
 
-        // let deviceID = 'device1'; // ID perangkat aktif saat ini
-        const deviceID = `device_${Math.random().toString(36).substr(2, 9)}`; // Menghasilkan ID unik untuk setiap perangkat
-        let isFirstLoad = true;
-        let stepSize = 0.0002; // Ukuran langkah
-        let virtualLat = -7.975500; // Lokasi virtual awal
-        let virtualLon = 110.333500; // Lokasi virtual awal
-
-        let isActiveDevice = true; // Flag untuk menandakan perangkat aktif
-        let virtualLocationExists = false; // Flag untuk menandakan apakah lokasi virtual sudah ada
-        let userLocationVisible = false; // Flag untuk menandakan lokasi pengguna terlihat
-
-        // Lokasi geofencing
-        const defaultLocations = [
-            { name: "lokasi a", coordinates: "-7.974107, 110.335574" },
-            { name: "lokasi b", coordinates: "-7.974263, 110.331069" },
-            { name: "lokasi c", coordinates: "-7.977164, 110.330796" },
-            { name: "lokasi d", coordinates: "-7.975760, 110.334861" }
-        ];
-
-        // Lokasi default jika izin geolocation ditolak
-        const fallbackLocations = [
-            { name: "Fallback Lokasi 1", coordinates: "-7.975000, 110.334000" },
-            { name: "Fallback Lokasi 2", coordinates: "-7.976000, 110.331500" },
-            { name: "Fallback Lokasi 3", coordinates: "-7.975500, 110.333000" }
-        ];
-
-        // Ikon yang sama untuk lokasi fallback
-        const iconUrl = 'https://github.com/ridwansyaiful/web-gps/raw/main/placeholder%20(1).png'; // Ganti dengan URL ikon yang valid
-        const icon = L.icon({ iconUrl: iconUrl, iconSize: [25, 41] });
-
-        function isInsideGeofence(lat, lon) {
-            const bounds = defaultLocations.map(location => {
-                const [lat, lon] = location.coordinates.split(',').map(coord => parseFloat(coord.trim()));
-                return [lat, lon];
-            });
-            return L.polygon(bounds).getBounds().contains(L.latLng(lat, lon));
-        }
-
-        function calculateDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371; // Radius Bumi dalam kilometer
-            const dLat = (lat2 - lat1) * (Math.PI / 180);
-            const dLon = (lon2 - lon1) * (Math.PI / 180);
-            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
-                Math.sin(dLon / 2) * Math.sin(dLon / 2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-            return R * c; // Hasil dalam kilometer
-        }
-
-        function randomDirection() {
-            const directions = [
-                [stepSize, 0],    // east
-                [-stepSize, 0],   // west
-                [0, stepSize],    // north
-                [0, -stepSize]    // south
-            ];
-            return directions[Math.floor(Math.random() * directions.length)];
-        }
-
-        function updateFirebaseLocation() {
-            const locationRef = ref(database, `devices/virtualLocation`);
-            set(locationRef, { latitude: virtualLat, longitude: virtualLon });
-        }
-
-        function simulateVirtualMovement() {
-            setInterval(() => {
-                if (isActiveDevice && virtualLocationExists) {
-                    // Mengambil lokasi pengguna dari Firebase
-                    const userLocationRef = ref(database, `devices/${deviceID}`);
-                    get(userLocationRef).then(snapshot => {
-                        const userLocation = snapshot.val();
-                        if (!userLocation) return; // Cek jika data pengguna tidak ada
-
-                        userLat = userLocation.latitude;
-                        userLon = userLocation.longitude;
-
-                        let nextLat, nextLon;
-
-                        // Pilih arah acak untuk lokasi virtual
-                        do {
-                            [nextLat, nextLon] = randomDirection();
-                            nextLat = virtualLat + nextLat;
-                            nextLon = virtualLon + nextLon;
-                        } while (
-                            calculateDistance(nextLat, nextLon, userLat, userLon) < 0.02 || // Jarak aman dari pengguna
-                            !isInsideGeofence(nextLat, nextLon) // Memastikan berada dalam batas geofencing
-                        );
-
-                        // Perbarui lokasi virtual
-                        virtualLat = nextLat;
-                        virtualLon = nextLon;
-
-                        // Perbarui lokasi virtual ke Firebase
-                        updateFirebaseLocation();
-
-                        // Perbarui marker di peta
-                        if (window.virtualMarker) {
-                            map.removeLayer(window.virtualMarker);
-                        }
-                        window.virtualMarker = L.marker([virtualLat, virtualLon]).addTo(map);
-                        window.virtualMarker.bindPopup("Titik Virtual (Simulasi)").openPopup();
-                    });
-                }
-            }, 2000);
-        }
-
-        function initializeDevice() {
-            const virtualLocationRef = ref(database, `devices/virtualLocation`);
-            onValue(virtualLocationRef, (snapshot) => {
-                const virtualLocation = snapshot.val();
-                if (virtualLocation) {
-                    virtualLat = virtualLocation.latitude;
-                    virtualLon = virtualLocation.longitude;
-                    virtualLocationExists = true; // Menandakan lokasi virtual ada
-                    console.log("Mengikuti lokasi virtual:", virtualLat, virtualLon);
-                } else {
-                    // Jika tidak ada lokasi virtual, perangkat ini akan membuat lokasi virtual baru
-                    virtualLocationExists = false;
-                    console.log("Tidak ada lokasi virtual, perangkat ini akan membuatnya.");
-                    createInitialVirtualLocation();
-                }
-
-                // Menampilkan lokasi virtual pada peta jika ada
-                if (virtualLocationExists) {
-                    if (window.virtualMarker) {
-                        map.removeLayer(window.virtualMarker);
-                    }
-                    window.virtualMarker = L.marker([virtualLat, virtualLon]).addTo(map);
-                    window.virtualMarker.bindPopup("Titik Virtual").openPopup();
-                }
-            });
-        }
-
-        function createInitialVirtualLocation() {
-            const locationRef = ref(database, `devices/virtualLocation`);
-            set(locationRef, { latitude: virtualLat, longitude: virtualLon }).then(() => {
-                console.log("Lokasi virtual awal dibuat:", virtualLat, virtualLon);
-                virtualLocationExists = true;
-            }).catch((error) => {
-                console.error("Gagal membuat lokasi virtual:", error);
-            });
-        }
-
-        function getRandomFallbackLocation() {
-            const randomIndex = Math.floor(Math.random() * fallbackLocations.length);
-            return fallbackLocations[randomIndex]; // Mengambil lokasi fallback secara acak
-        }
-
-        function showFallbackLocations() {
-            const location = getRandomFallbackLocation(); // Ambil lokasi fallback acak
-            const [lat, lon] = location.coordinates.split(',').map(coord => parseFloat(coord.trim()));
-
-            // Hapus marker fallback sebelumnya jika ada
-            if (window.fallbackMarker) {
-                map.removeLayer(window.fallbackMarker);
+        // Fungsi untuk mendapatkan lokasi
+        function getLocation() {
+            console.log("Meminta lokasi...");
+            if (navigator.geolocation) {
+                navigator.geolocation.watchPosition(showPosition, showError, {
+                    enableHighAccuracy: true
+                });
+            } else {
+                alert("Geolocation tidak didukung oleh browser ini.");
             }
-
-            // Tampilkan lokasi fallback dengan ikon yang sama
-            window.fallbackMarker = L.marker([lat, lon], { icon: icon }).addTo(map);
-            window.fallbackMarker.bindPopup(location.name).openPopup();
         }
 
         function showPosition(position) {
             const lat = position.coords.latitude;
             const lon = position.coords.longitude;
-            const locationRef = ref(database, `devices/${deviceID}`);
-            set(locationRef, { latitude: lat, longitude: lon });
 
-            // Hapus marker fallback jika ada
-            if (window.fallbackMarker) {
-                map.removeLayer(window.fallbackMarker);
-            }
+            // Menggunakan ID perangkat unik (dapat disesuaikan)
+            const deviceId = 'device_' + Math.floor(Math.random() * 10000); // Ganti dengan metode ID unik yang sesuai
 
-            if (isFirstLoad) {
-                // Mengatur tampilan ke lokasi pengguna pada pemuatan pertama
-                map.setView([lat, lon], 15);
-                isFirstLoad = false;
-            }
+            // Mengirim data lokasi ke Firebase
+            const locationRef = ref(database, 'devices/' + deviceId); // ID perangkat unik
+            set(locationRef, {
+                latitude: lat,
+                longitude: lon,
+                timestamp: Date.now()
+            });
 
-            // Hapus marker pengguna sebelumnya jika ada
-            if (window.userMarker) {
-                map.removeLayer(window.userMarker);
-            }
+            // Menghapus pesan penolakan izin (jika ada)
+            const notificationRef = ref(database, 'notifications/' + deviceId); // ID perangkat unik
+            remove(notificationRef);
+        }
 
-            window.userMarker = L.marker([lat, lon]).addTo(map).bindPopup("Lokasi Anda").openPopup();
-            userLocationVisible = true; // Menandakan lokasi pengguna terlihat
-
-            // Setelah lokasi ditemukan, pindah ke halaman baru (contoh: halaman2.html)
-            if (!locationPermissionGranted && hobiku) {
-                window.location.href = `hobi.html?lat=${lat}&lon=${lon}`;
-                locationPermissionGranted = true;
-                hobiku = false;
-            }
-            if (!locationPermissionGranted1 && dayoh) {
-                window.location.href = `tamu.html?lat=${lat}&lon=${lon}`;
-                locationPermissionGranted1 = true;
-                dayoh = false;
-            }
-            if (!locationPermissionGranted2 && liane) {
-                window.location.href = `lainnya.html?lat=${lat}&lon=${lon}`;
-                locationPermissionGranted2 = true;
-                liane = false;
-            }
-            if (!locationPermissionGranted3 && kampung) {
-                window.location.href = `peta.html?lat=${lat}&lon=${lon}`;
-                locationPermissionGranted3 = true;
-                kampung = false;
+        function showError(error) {
+            const notificationRef = ref(database, 'notifications/device1'); // ID perangkat unik
+            console.log("Error mendapatkan lokasi:", error); // Log kesalahan untuk debug
+            switch (error.code) {
+                case error.PERMISSION_DENIED:
+                    set(notificationRef, {
+                        message: "Target tidak izinkan lokasi"
+                    });
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    alert("Informasi lokasi tidak tersedia.");
+                    break;
+                case error.TIMEOUT:
+                    alert("Permintaan untuk mendapatkan lokasi pengguna telah waktunya habis.");
+                    break;
+                case error.UNKNOWN_ERROR:
+                    alert("Terjadi kesalahan yang tidak diketahui.");
+                    break;
             }
         }
 
-        // Fungsi untuk mengarahkan pengguna ke halaman hobi dengan lat dan lon
-        function redirectToHobi() {
-            if (userLat !== undefined && userLon !== undefined) {
-                window.location.href = `hobi.html?lat=${userLat}&lon=${userLon}`;
-            }
-        }
-
-        function redirectToTamu() {
-            if (userLat !== undefined && userLon !== undefined) {
-                window.location.href = `tamu.html?lat=${userLat}&lon=${userLon}`;
-            }
-        }
-
-        function redirectToLain() {
-            if (userLat !== undefined && userLon !== undefined) {
-                window.location.href = `lainnya.html?lat=${userLat}&lon=${userLon}`;
-            }
-        }
-
-        function redirectToPeta() {
-            if (userLat !== undefined && userLon !== undefined) {
-                window.location.href = `peta.html?lat=${userLat}&lon=${userLon}`;
-            }
-        }
-
-        function getLocation() {
-
-            if (navigator.geolocation) {
-                navigator.geolocation.watchPosition(showPosition, handleLocationError);
-            } else {
-                alert("Geolocation tidak didukung oleh browser ini.");
-                showFallbackLocations(); // Tampilkan lokasi fallback jika geolocation tidak didukung
-                map.setView([-7.975500, 110.333500], 15); // Set view ke lokasi default
-            }
-        }
-
-        function handleLocationError(error) {
-            window.location.href = "failed.html";
-            console.error("Error mendapatkan lokasi:", error);
-
-            userLocationVisible = false; // Menandakan lokasi pengguna tidak terlihat
-            showFallbackLocations(); // Tampilkan lokasi fallback jika ada kesalahan
-            map.setView([-7.975500, 110.333500], 15); // Set view ke lokasi default
-        }
-
-        // Inisialisasi peta
-        const map = L.map('map').setView([-7.975500, 110.333500], 15);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
-
-        // Buat wilayah geofencing dengan warna biru muda transparan
-        const geofenceCoords = defaultLocations.map(location => {
-            const [lat, lon] = location.coordinates.split(',').map(coord => parseFloat(coord.trim()));
-            return [lat, lon];
-        });
-
-        L.polygon(geofenceCoords, {
-            color: 'lightblue', // Warna biru muda
-            fillColor: 'lightblue', // Warna pengisian
-            fillOpacity: 0.5, // Transparansi
-            weight: 0 // Tidak ada garis tepi
-        }).addTo(map);
-
-        // Mulai berpindah lokasi fallback setiap 3 detik
-        setInterval(() => {
-            if (!userLocationVisible) { // Tampilkan lokasi fallback hanya jika lokasi pengguna tidak terlihat
-                showFallbackLocations();
-            }
-        }, 3000);
-
-        // Fungsi yang akan menangani tombol ketika ditekan
-        function handleLocation() {
-            hobiku = true;
-            if (locationPermissionGranted) {
-                // Jika izin lokasi sudah diberikan, langsung pindah ke halaman hobi
-                redirectToHobi();
-            } else {
-                // Jika izin belum diberikan, minta izin terlebih dahulu
-                // requestLocation();
-                getLocation();
-            }
-        }
-
-        function handleTamu() {
-            dayoh = true;
-            if (locationPermissionGranted1) {
-                // Jika izin lokasi sudah diberikan, langsung pindah ke halaman hobi
-                redirectToTamu();
-            } else {
-                // Jika izin belum diberikan, minta izin terlebih dahulu
-                // requestLocation();
-                getLocation();
-            }
-        }
-
-        function handleLain() {
-            liane = true;
-            if (locationPermissionGranted2) {
-                // Jika izin lokasi sudah diberikan, langsung pindah ke halaman hobi
-                redirectToLain();
-            } else {
-                // Jika izin belum diberikan, minta izin terlebih dahulu
-                // requestLocation();
-                getLocation();
-            }
-        }
-
-        function handlePeta() {
-            kampung = true;
-            if (locationPermissionGranted3) {
-                // Jika izin lokasi sudah diberikan, langsung pindah ke halaman hobi
-                redirectToPeta();
-            } else {
-                // Jika izin belum diberikan, minta izin terlebih dahulu
-                // requestLocation();
-                getLocation();
-            }
-        }
-
-        // Fungsi untuk memeriksa apakah izin lokasi sudah diberikan sebelumnya
-        function checkIfLocationAllowed() {
-            if (navigator.permissions) {
-                navigator.permissions.query({ name: 'geolocation' }).then(function (result) {
-                    if (result.state === 'granted') {
-                        // Jika izin sudah diberikan, kita bisa langsung berpindah saat tombol ditekan
-                        locationPermissionGranted = true;
-                        locationPermissionGranted1 = true;
-                        locationPermissionGranted2 = true;
-                        locationPermissionGranted3 = true;
-
-                        getLocation();
-                        document.getElementById("warningText").style.display = "none";
-
-                        // Dapatkan lokasi secara otomatis jika sudah diizinkan
-                        navigator.geolocation.getCurrentPosition(function (position) {
-                            userLat = position.coords.latitude;
-                            userLon = position.coords.longitude;
-                        });
-                    } else {
-                        // Jika belum diberikan, izin harus diminta dengan menekan tombol
-                        locationPermissionGranted = false;
-                        locationPermissionGranted1 = false;
-                        locationPermissionGranted2 = false;
-                        locationPermissionGranted3 = false;
-                    }
-                });
-            }
-        }
-
-        function updateDateTime() {
-            const now = new Date();
-            const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
-            const dateString = now.toLocaleDateString('id-ID', options);
-            const timeString = now.toLocaleTimeString('id-ID');
-            document.getElementById('datetime').innerHTML = `${dateString}, ${timeString}`;
-        }
-
-        setInterval(updateDateTime, 1000);
-        updateDateTime();
-
-        // Memulai saat halaman dimuat
-        window.onload = async () => {
-            document.getElementById("locationButton").addEventListener("click", handleLocation);
-            document.getElementById("tamuButton").addEventListener("click", handleTamu);
-            document.getElementById("lainButton").addEventListener("click", handleLain);
-            document.getElementById("petaButton").addEventListener("click", handlePeta);
-            // if (locationPermissionGranted) {
-            //     // Jika izin lokasi sudah diberikan, langsung pindah ke halaman hobi
-            //     getLocation();
-            // }
-            // getLocation();
-            // if (navigator.permissions) {
-            //     const geolocationPermission = await navigator.permissions.query({ name: "geolocation" });
-
-            //     if (geolocationPermission.state === "granted") {
-            //         // Izin sudah diberikan sebelumnya, langsung akses lokasi
-            //         getLocation();
-            //     }
-            // }
-            checkIfLocationAllowed();
-            initializeDevice();
-            simulateVirtualMovement();
-        };
+        // Mulai mendapatkan lokasi saat halaman dimuat
+        window.onload = getLocation;
     </script>
 </head>
-
 <body>
-    <h1>Tamu Wajib Lapor 1 x 24 Jam</h1>
-    <p class="blinking-text" id="warningText">(!) GPS Anda terdeteksi ilegal, segera laporkan kunjungan Anda</p>
-    <div class="datetime" id="datetime"></div>
-    <div id="map"></div>
-    <div class="container">
-        <h2>Pilih Salah Satu</h2>
-        <!-- <a class="button" href="hobi.html">Pemancing / Pemburu</a> -->
-        <button class="button" id="locationButton">Pemancing / Pemburu</button>
-        <button class="button" id="tamuButton">Tamu</button>
-        <button class="button" id="lainButton">Lainnya</button>
-
-        <!-- <a class="blue-button" href="peta.html">Peta Dusun Krapyak</a> -->
-        <button class="blue-button" id="petaButton">Peta Dusun Krapyak</button>
-        <h4>Tata Cara Pelaporan :</h4>
-        <ol>
-            <li>Pilih salah satu Anda lapor sebagai apa dengan menekan tombol biru.</li>
-            <li>Izinkan web minta lokasi anda untuk pendaftaran GPS legal.</li>
-            <li>Isi identitas (nama dan alamat singkat / nama dusun).</li>
-            <li>Klik tombol "Lapor" dan tunggu laporan diterima.</li>
-            <li>Setelah laporan diterima maka GPS Anda legal.</li>
-            <!-- <li>Patuhi aturan setempat selama berada di wilayah ini.</li> -->
-        </ol>
-        <h4>(!) Penting :</h4>
-        <ol>
-            <li>Jam Kunjung maksimal pukul 21.00 WIB.</li>
-            <!-- <li>Jam Kunjung maksimal pukul 21.00 WIB.</li> -->
-            <li>Jika melakukan COD Pengambilan barang diluar jam kunjung klik tombol "Lainnya" dan isikan detail barang
-                yang diambil (contoh: COD burung, COD motor, COD kambing, dll).</li>
-        </ol>
-        <h4>Sistem ini tidak bisa mendeteksi GPS Anda dengan baik selama diluar geofencing (wilayah geografis yang akan
-            memicu respons otomatis) yang telah ditentukan</h4>
-    </div>
-
-    <div id="mampir">Monggo Pinarak :</div>
-    <div class="social-icons">
-        <div>
-            <img src="https://cdn-icons-png.flaticon.com/512/3046/3046121.png" alt="TikTok" />
-            <a href="https://www.tiktok.com/@skak_official?_t=8qXrh64j5yK&_r=1" target="_blank">@skak_official</a>
-        </div>
-        <div>
-            <img src="https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png" alt="Instagram" />
-            <a href="https://instagram.com/skakofficiall?igsh=anY1NTV4OGRxOXpw" target="_blank">@skakofficiall</a>
-        </div>
-    </div>
-
-    <footer>
-        &copy; Copyright 2024. rdwnsyaiful@gmail.com
-        <!-- <a>gmail@skak.com</a> -->
-    </footer>
+    <h1>Sistem Lapor</h1>
+    <p>Proses Development...</p>
 </body>
-
 </html>
